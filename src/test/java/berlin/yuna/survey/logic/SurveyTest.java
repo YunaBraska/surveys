@@ -5,6 +5,7 @@ import berlin.yuna.survey.model.types.QuestionGeneric;
 import berlin.yuna.survey.model.types.simple.Question;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
@@ -21,6 +22,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@Tag("UnitTest")
 class SurveyTest {
 
     //TODO: TestMap

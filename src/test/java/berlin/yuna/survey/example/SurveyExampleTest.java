@@ -4,6 +4,7 @@ import berlin.yuna.survey.logic.Survey;
 import berlin.yuna.survey.model.SurveyAnswer;
 import berlin.yuna.survey.model.types.simple.Question;
 import berlin.yuna.survey.model.types.simple.QuestionBool;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -13,6 +14,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.core.Is.is;
 
+@Tag("UnitTest")
 class SurveyExampleTest {
 
     @Test

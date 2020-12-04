@@ -7,6 +7,7 @@ import berlin.yuna.survey.model.types.simple.QuestionBool;
 import berlin.yuna.survey.model.types.simple.QuestionInt;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
@@ -23,6 +24,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@Tag("UnitTest")
 class QuestionGenericTest {
 
     public static final String Q1 = "Q1";
