@@ -96,8 +96,8 @@ class SurveyExampleTest {
 ### Diagram example
 ![Diagram example](src/test/resources/diagram_png_example.png)
 
-[build_shield]: https://img.shields.io/travis/YunaBraska/surveys/master?style=flat-square
-[build_link]: https://travis-ci.org/YunaBraska/surveys
+[build_shield]: https://github.com/YunaBraska/surveys/workflows/JAVA_CI/badge.svg
+[build_link]: https://github.com/YunaBraska/surveys/actions
 [maintainable_shield]: https://img.shields.io/codeclimate/maintainability/YunaBraska/surveys?style=flat-square
 [maintainable_link]: https://codeclimate.com/github/YunaBraska/surveys/maintainability
 [coverage_shield]: https://img.shields.io/codecov/c/github/YunaBraska/surveys?style=flat-square
