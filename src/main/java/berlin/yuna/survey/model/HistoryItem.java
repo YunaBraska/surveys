@@ -6,30 +6,30 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Objects;
 
-public class SurveyAnswer implements Comparable<SurveyAnswer> {
+public class HistoryItem implements Comparable<HistoryItem> {
     private String label;
     private Object answer;
     private LocalDateTime answeredAt;
     private boolean draft;
 
-    public SurveyAnswer() {
+    public HistoryItem() {
     }
 
-    public SurveyAnswer(final String label, final Object answer, final boolean draft, final boolean isAnswered) {
+    public HistoryItem(final String label, final Object answer, final boolean draft, final boolean isAnswered) {
         this.label = label;
         this.answer = answer;
         this.answeredAt = isAnswered ? LocalDateTime.now(ZoneId.of("UTC")) : null;
         this.draft = draft;
     }
 
-    public SurveyAnswer(final String label) {
+    public HistoryItem(final String label) {
         this.label = label;
         this.answer = null;
         this.answeredAt = null;
         this.draft = true;
     }
 
-    public SurveyAnswer(final SurveyAnswer answer, final boolean draft) {
+    public HistoryItem(final HistoryItem answer, final boolean draft) {
         this.label = answer.label;
         this.answer = answer.answer;
         this.answeredAt = answer.answeredAt;
@@ -89,7 +89,7 @@ public class SurveyAnswer implements Comparable<SurveyAnswer> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        SurveyAnswer that = (SurveyAnswer) o;
+        HistoryItem that = (HistoryItem) o;
 
         return Objects.equals(label, that.label);
     }
@@ -110,7 +110,7 @@ public class SurveyAnswer implements Comparable<SurveyAnswer> {
     }
 
     @Override
-    public int compareTo(final SurveyAnswer o) {
+    public int compareTo(final HistoryItem o) {
         if (o.getAnsweredAt() == null) {
             return 1;
         } else if (getAnsweredAt() == null) {

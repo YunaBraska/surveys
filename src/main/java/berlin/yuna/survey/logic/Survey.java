@@ -1,6 +1,6 @@
 package berlin.yuna.survey.logic;
 
-import berlin.yuna.survey.model.SurveyAnswer;
+import berlin.yuna.survey.model.HistoryItem;
 import berlin.yuna.survey.model.types.QuestionGeneric;
 
 import java.time.Duration;
@@ -26,7 +26,7 @@ public class Survey {
 
     private QuestionGeneric<?, ?> last;
     //https://stackoverflow.com/questions/4724995/lock-free-concurrent-linked-list-in-java
-    private final LinkedList<SurveyAnswer> history = new LinkedList<>();
+    private final LinkedList<HistoryItem> history = new LinkedList<>();
 
     /**
      * Starts new SurveyCtx
@@ -72,8 +72,8 @@ public class Survey {
      * @return {@link Survey}
      * @throws IllegalStateException when the {@code history} is empty or has no valid {@link QuestionGeneric}
      */
-    public static Survey init(final Iterable<SurveyAnswer> history) {
-        final LinkedList<SurveyAnswer> linkedHistory = StreamSupport.stream(history.spliterator(), false).filter(answer -> QuestionGeneric.exists(answer.getLabel())).collect(Collectors.toCollection(LinkedList::new));
+    public static Survey init(final Iterable<HistoryItem> history) {
+        final LinkedList<HistoryItem> linkedHistory = StreamSupport.stream(history.spliterator(), false).filter(answer -> QuestionGeneric.exists(answer.getLabel())).collect(Collectors.toCollection(LinkedList::new));
         Survey context = init(linkedHistory.isEmpty() ? null : linkedHistory.getFirst().getLabel());
         context.history.clear();
         context.history.addAll(linkedHistory);
@@ -109,10 +109,10 @@ public class Survey {
         QuestionGeneric<?, ?> flowStart = getFirst();
         assertQuestionBelongsToFlow(target, flowStart);
 
-        if (history.stream().filter(SurveyAnswer::isNotDraft).anyMatch(target::match)) {
+        if (history.stream().filter(HistoryItem::isNotDraft).anyMatch(target::match)) {
             result = runBackTransitions(target);
         } else {
-            final Map<String, Object> mappedHistory = getHistoryAnswered().collect(toLinkedMap(SurveyAnswer::getLabel, SurveyAnswer::getAnswer));
+            final Map<String, Object> mappedHistory = getHistoryAnswered().collect(toLinkedMap(HistoryItem::getLabel, HistoryItem::getAnswer));
             String label = flowStart.label();
             do {
                 if (!mappedHistory.containsKey(label)) {
@@ -135,7 +135,6 @@ public class Survey {
 
         //TODO: transition forward:
         // * avoid circular flow e.g. for defined transition back as a target
-        // * only allowed if all needed answers are given (Exception)
 
         return result;
     }
@@ -155,7 +154,7 @@ public class Survey {
      * @return previous {@link QuestionGeneric} and {@code null} if there is no previous entry
      */
     public QuestionGeneric<?, ?> getPrevious() {
-        final List<SurveyAnswer> answers = getHistoryAnswered().collect(toList());
+        final List<HistoryItem> answers = getHistoryAnswered().collect(toList());
         final Set<QuestionGeneric<?, ?>> parents = getFirst().getParentsOf(get());
         return parents.stream().filter(parent -> answers.stream().anyMatch(answer -> answer.match(parent))).findFirst().orElse(parents.isEmpty() ? null : parents.iterator().next());
     }
@@ -175,7 +174,7 @@ public class Survey {
      * @return true if there is no next {@link QuestionGeneric}
      */
     public boolean isEnded() {
-        return last.target().isEmpty() && getHistoryAnswered().filter(SurveyAnswer::isNotDraft).anyMatch(answer -> answer.match(last));
+        return last.target().isEmpty() && getHistoryAnswered().filter(HistoryItem::isNotDraft).anyMatch(answer -> answer.match(last));
     }
 
     /**
@@ -183,7 +182,7 @@ public class Survey {
      *
      * @return all answers which were given in the context
      */
-    public List<SurveyAnswer> getHistory() {
+    public List<HistoryItem> getHistory() {
         return new LinkedList<>(history);
     }
 
@@ -219,8 +218,8 @@ public class Survey {
 
     public Map<String, Long> getDurationsMS() {
         final Map<String, Long> result = new LinkedHashMap<>();
-        final AtomicReference<SurveyAnswer> lastTime = new AtomicReference<>(null);
-        getHistoryAnswered().sorted().filter(SurveyAnswer::isNotDraft).forEach(item -> {
+        final AtomicReference<HistoryItem> lastTime = new AtomicReference<>(null);
+        getHistoryAnswered().sorted().filter(HistoryItem::isNotDraft).forEach(item -> {
             Optional.ofNullable(lastTime.get()).ifPresent(
                     lastT -> result.put(lastT.getLabel(), Duration.between(lastT.getAnsweredAt(), item.getAnsweredAt()).toMillis())
             );
@@ -229,22 +228,22 @@ public class Survey {
         return result;
     }
 
-    private static QuestionGeneric<?, ?> findLast(final LinkedList<SurveyAnswer> historySorted) {
+    private static QuestionGeneric<?, ?> findLast(final LinkedList<HistoryItem> historySorted) {
         return QuestionGeneric.get(historySorted.stream()
-                .filter(SurveyAnswer::isNotAnswered).findFirst()
-                .map(SurveyAnswer::getLabel)
+                .filter(HistoryItem::isNotAnswered).findFirst()
+                .map(HistoryItem::getLabel)
                 .orElse(historySorted.getLast().getLabel())
         );
     }
 
-    private Stream<SurveyAnswer> getHistoryAnswered() {
-        return history.stream().filter(SurveyAnswer::isAnswered);
+    private Stream<HistoryItem> getHistoryAnswered() {
+        return history.stream().filter(HistoryItem::isAnswered);
     }
 
     private void markAsCurrent(final String label) {
-        final SurveyAnswer surveyAnswer = getOrCreateAnswer(label);
-        surveyAnswer.setDraft(true);
-        surveyAnswer.setAnsweredAt(null);
+        final HistoryItem historyItem = getOrCreateAnswer(label);
+        historyItem.setDraft(true);
+        historyItem.setAnsweredAt(null);
     }
 
     private void markAsDraft(final String label) {
@@ -252,16 +251,16 @@ public class Survey {
     }
 
     private void markAsAnswered(final String label, final Object answer, final boolean upDate) {
-        final SurveyAnswer surveyAnswer = getOrCreateAnswer(label);
-        if (upDate || surveyAnswer.getAnsweredAt() == null) {
-            surveyAnswer.setAnsweredAt(LocalDateTime.now(ZoneId.of("UTC")));
+        final HistoryItem historyItem = getOrCreateAnswer(label);
+        if (upDate || historyItem.getAnsweredAt() == null) {
+            historyItem.setAnsweredAt(LocalDateTime.now(ZoneId.of("UTC")));
         }
-        surveyAnswer.setDraft(false);
-        surveyAnswer.setAnswer(answer);
+        historyItem.setDraft(false);
+        historyItem.setAnswer(answer);
     }
 
-    private SurveyAnswer getOrCreateAnswer(final String label) {
-        final SurveyAnswer answer = new SurveyAnswer(label);
+    private HistoryItem getOrCreateAnswer(final String label) {
+        final HistoryItem answer = new HistoryItem(label);
         int index = history.indexOf(answer);
         if (index == -1) {
             history.add(answer);
@@ -283,9 +282,9 @@ public class Survey {
     }
 
     private boolean runBackTransitions(final QuestionGeneric<?, ?> question) {
-        final Iterator<SurveyAnswer> iterator = new LinkedList<>(history).descendingIterator();
+        final Iterator<HistoryItem> iterator = new LinkedList<>(history).descendingIterator();
         while (iterator.hasNext()) {
-            SurveyAnswer answer = iterator.next();
+            HistoryItem answer = iterator.next();
             if (!answer.isAnswered()) {
                 history.remove(answer);
                 continue;

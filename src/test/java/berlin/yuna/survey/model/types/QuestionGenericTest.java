@@ -1,7 +1,7 @@
 package berlin.yuna.survey.model.types;
 
 
-import berlin.yuna.survey.model.SurveyAnswer;
+import berlin.yuna.survey.model.HistoryItem;
 import berlin.yuna.survey.model.types.simple.Question;
 import berlin.yuna.survey.model.types.simple.QuestionBool;
 import berlin.yuna.survey.model.types.simple.QuestionInt;
@@ -176,8 +176,8 @@ class QuestionGenericTest {
     @Test
     @DisplayName("match SurveyAnswer")
     void match() {
-        assertThat(Question.of(Q1).match(new SurveyAnswer("Q1", null, true, false)), is(true));
-        assertThat(Question.of(Q1).match(new SurveyAnswer("Q2", null, true, false)), is(false));
+        assertThat(Question.of(Q1).match(new HistoryItem("Q1", null, true, false)), is(true));
+        assertThat(Question.of(Q1).match(new HistoryItem("Q2", null, true, false)), is(false));
     }
 
     @Test

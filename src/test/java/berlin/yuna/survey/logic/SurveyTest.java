@@ -1,6 +1,6 @@
 package berlin.yuna.survey.logic;
 
-import berlin.yuna.survey.model.SurveyAnswer;
+import berlin.yuna.survey.model.HistoryItem;
 import berlin.yuna.survey.model.types.QuestionGeneric;
 import berlin.yuna.survey.model.types.simple.Question;
 import org.junit.jupiter.api.BeforeEach;
@@ -197,15 +197,15 @@ class SurveyTest {
         assertThat(survey.get(), is(equalTo(Question.of(Q1))));
         assertThat(survey.getPrevious(), is(equalTo(Question.of(START))));
         assertThat(backTriggered.get(), is(true));
-        assertThat(survey.getHistory().stream().filter(SurveyAnswer::isDraft).toArray().length, is(2));
-        assertThat(survey.getHistory().stream().filter(SurveyAnswer::isNotDraft).toArray().length, is(1));
+        assertThat(survey.getHistory().stream().filter(HistoryItem::isDraft).toArray().length, is(2));
+        assertThat(survey.getHistory().stream().filter(HistoryItem::isNotDraft).toArray().length, is(1));
 
         //FORWARD
         survey.transitTo(before.label());
         assertThat(survey.get(), is(equalTo(before)));
         assertThat(survey.getPrevious(), is(equalTo(Question.of(Q2))));
-        assertThat(survey.getHistory().stream().filter(SurveyAnswer::isDraft).toArray().length, is(0));
-        assertThat(survey.getHistory().stream().filter(SurveyAnswer::isNotDraft).toArray().length, is(3));
+        assertThat(survey.getHistory().stream().filter(HistoryItem::isDraft).toArray().length, is(0));
+        assertThat(survey.getHistory().stream().filter(HistoryItem::isNotDraft).toArray().length, is(3));
     }
 
     @Test

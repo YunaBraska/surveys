@@ -1,7 +1,7 @@
 package berlin.yuna.survey.model.types;
 
 import berlin.yuna.survey.model.Choice;
-import berlin.yuna.survey.model.SurveyAnswer;
+import berlin.yuna.survey.model.HistoryItem;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -285,9 +285,9 @@ public abstract class QuestionGeneric<T, C extends QuestionGeneric<T, C>> implem
 
     /**
      * @param answer input for check
-     * @return {@code true} if {@link SurveyAnswer} relates to the current {@link QuestionGeneric}
+     * @return {@code true} if {@link HistoryItem} relates to the current {@link QuestionGeneric}
      */
-    public boolean match(final SurveyAnswer answer) {
+    public boolean match(final HistoryItem answer) {
         return answer != null && label.equals(answer.getLabel());
     }
 

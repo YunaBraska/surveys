@@ -4,13 +4,19 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>berlin.yuna</groupId>
     <artifactId>surveys</artifactId>
-    <version>0.0.1</version>
+    <version>0.1.0</version>
     <name>Surveys</name>
 
     <description>Survey is a plain java library to provide a base for surveys / questionnaires. It also provides a
         function to generate diagrams and to measure answer times.
     </description>
     <url>https://github.com/YunaBraska/surveys.git</url>
+
+    <scm>
+        <connection>scm:git:ssh://git@github.com/YunaBraska/surveys.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/YunaBraska/surveys.git</developerConnection>
+        <url>https://github.com/YunaBraska/surveys.git</url>
+    </scm>
 
     <developers>
         <developer>
@@ -324,12 +330,4 @@
             </distributionManagement>
         </profile>
     </profiles>
-
-    <scm>
-        <connection>scm:git:https://github.com/YunaBraska/surveys</connection>
-        <developerConnection>scm:git:https://github.com/YunaBraska/surveys</developerConnection>
-        <url>https://github.com/YunaBraska/surveys.git</url>
-    </scm>
-
-
 </project>
