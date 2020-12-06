@@ -18,10 +18,11 @@ to [generate diagrams](#diagram-example) and to [measure answer times](#answer-d
 
 * [Motivation](#motivation)
 * [Class overview](#class-overview)
+* [Diagram example](#diagram-example)
 * [Usage](#usage)
     * [Define a flow](#define-a-flow)
     * [Define a flow condition](#define-a-condition)
-    * [define-a-Back-Event/Condition](#define-a-back-event-with-condition)
+    * [Define-a-Back-Event/Condition](#define-a-back-event-with-condition)
     * [Define custom condition](#define-custom-condition)
     * [Define custom question](#define-custom-question)
     * [Start a survey](#start-a-survey)
@@ -31,7 +32,6 @@ to [generate diagrams](#diagram-example) and to [measure answer times](#answer-d
     * [Render a diagram](#render-a-diagram)
     * [Answer duration metrics](#answer-duration-metrics)
 * [Full example](#full-example)
-* [Diagram example](#diagram-example)
 * [TODOs](#todos)
 
 ### Motivation
@@ -50,6 +50,10 @@ There are only few classes to use
   renders a diagram of a survey
 * [Survey](https://github.com/YunaBraska/surveys/blob/master/src/main/java/berlin/yuna/survey/model/types/QuestionGeneric.java)
   used to define a flow
+
+### Diagram example
+
+![Diagram example](src/test/resources/diagram_png_example.png)
 
 ### Usage
 
@@ -181,6 +185,7 @@ public class MyQuestion extends QuestionGeneric<Boolean, MyQuestion> {
 #### Render a diagram
 
 * A diagram can be easily rendered of any survey (default target = javaTmpDir)
+* Requires the library `graphviz` e.g. `brew install graphviz`, `sudo apt-get install graphviz`
 
 ```java
         File path=SurveyDiagram.render(survey,"/optional/target/file.svg",FileFormat.SVG)
@@ -243,14 +248,12 @@ class SurveyExampleTest {
 }
 ```
 
-### Diagram example
-
-![Diagram example](src/test/resources/diagram_png_example.png)
-
 ### TODOs
+
 * [ ] Implement onBack conditions
 * [ ] Implement context for conditions
-* [ ] Implement groups of questions and answers
+* [ ] Implement groups of questions and answers?
+* [ ] Export (CSV Style) / Import flows (ConditionRegister)
 * [ ] Create more question examples like radio, checkbox, list, map,...
 * [ ] Stop never ending circular transitions
 * [ ] Implement custom exceptions
