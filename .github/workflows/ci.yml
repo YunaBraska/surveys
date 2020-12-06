@@ -39,7 +39,7 @@ jobs:
           JACOCO_SOURCE_PATH: "${{github.workspace}}/src/main/java"
         with:
           coverageLocations: ${{github.workspace}}/target/site/jacoco/jacoco.xml:jacoco
-      - name: Push changes
+      - name: Tag and Push
         run: .github/scripts/push_changes.sh "https://x-access-token:${{ secrets.CI_TOKEN }}@github.com/${{ github.repository }}"
       #END_TEMPLATE UPDATE_AND_TEST
 

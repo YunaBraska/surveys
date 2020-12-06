@@ -26,7 +26,7 @@ else
   echo "No git changes to push"
 fi
 # CREATE TAG
-if ./mvnw compile -P tag $ >/dev/null; then
+if ./mvnw compile -q -DpushChanges=false -P tag; then
   echo "New tag created"
   # new branch as trigger for new release
   git branch "release" || true
