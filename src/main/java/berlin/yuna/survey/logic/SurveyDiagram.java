@@ -37,11 +37,20 @@ public class SurveyDiagram {
     final ILeaf start = createLeaf(LeafType.CIRCLE_START, "start");
     final StyleBuilder style = new StyleBuilder(SkinParam.create(UmlDiagramType.ACTIVITY));
 
+    //FIXME: unused move to static render method
     public SurveyDiagram(final Survey survey) {
         start.setTop(true);
         addLeave(survey.getFirst().routes());
     }
 
+    /**
+     * Renders a diagram from a survey flow
+     * @param output nullable target path - on default generates a tmp file
+     * @param format format of generated diagram
+     * @return file path of generated diagram
+     * @throws IOException on unexpected save file issues
+     */
+    //FIXME: method with own unchecked exception for easier usage
     public File render(final File output, final FileFormat format) throws IOException {
         switch (format) {
             case PDF:

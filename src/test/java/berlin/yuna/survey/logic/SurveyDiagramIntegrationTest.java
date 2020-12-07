@@ -1,7 +1,7 @@
 package berlin.yuna.survey.logic;
 
 
-import berlin.yuna.survey.model.types.CustomChoice;
+import berlin.yuna.survey.model.types.CustomCondition;
 import berlin.yuna.survey.model.types.simple.Question;
 import net.sourceforge.plantuml.FileFormat;
 import org.junit.jupiter.api.Tag;
@@ -22,7 +22,7 @@ class SurveyDiagramIntegrationTest {
     @Test
     void renderDiagramFromSurvey() throws IOException {
         Survey survey = createSimpleSurvey();
-        Question.of(Q1).targetGet(Question.of(Q3), new CustomChoice());
+        Question.of(Q1).targetGet(Question.of(Q3), new CustomCondition());
         Question.of(Q3).target(Question.of(Q1), answer -> answer.equals("2"));
         Question.of(Q3).target(Question.of(Q5), answer -> answer.equals("4"));
         for (FileFormat format : FileFormat.values()) {

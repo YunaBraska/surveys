@@ -4,8 +4,13 @@
 name: JAVA_CI_DEPLOY
 
 on:
+  deployment:
+    branches: [ master ]
   schedule:
     - cron: '0 7 * * *'
+
+env:
+  ACTIONS_ALLOW_UNSECURE_COMMANDS: true
 
 jobs:
   build:
@@ -21,23 +26,23 @@ jobs:
         run: sudo apt-get -qq -y install graphviz > /dev/null
       - name: Maven compile and update dependencies
         run: |
-          ./mvnw -B versions:update-properties -DgenerateBackupPoms=false
-          ./mvnw -B clean verify -Dmaven.test.skip=true
+          ./mvnw -B -q versions:update-properties -DgenerateBackupPoms=false
+          ./mvnw -B -q clean verify -Dmaven.test.skip=true
       - name: Run tests
         run: ./mvnw -B clean verify
-      - name: Upload coverage to Codecov
+      - name: Publish code coverage
         uses: codecov/codecov-action@v1
         with:
           fail_ci_if_error: true
           verbose: false
-      - name: Test & publish code coverage
+      - name: Publish code quality
         uses: paambaati/codeclimate-action@v2.7.4
         env:
           CC_TEST_REPORTER_ID: ${{secrets.CC_TEST_REPORTER_ID}}
           JACOCO_SOURCE_PATH: "${{github.workspace}}/src/main/java"
         with:
           coverageLocations: ${{github.workspace}}/target/site/jacoco/jacoco.xml:jacoco
-      - name: Push changes
+      - name: Tag and Push
         run: .github/scripts/push_changes.sh "https://x-access-token:${{ secrets.CI_TOKEN }}@github.com/${{ github.repository }}"
       #END_FILL_WITH UPDATE_AND_TEST
       - name: "Check if branch exists"

@@ -23,16 +23,16 @@ jobs:
         run: sudo apt-get -qq -y install graphviz > /dev/null
       - name: Maven compile and update dependencies
         run: |
-          ./mvnw -B versions:update-properties -DgenerateBackupPoms=false
-          ./mvnw -B clean verify -Dmaven.test.skip=true
+          ./mvnw -B -q versions:update-properties -DgenerateBackupPoms=false
+          ./mvnw -B -q clean verify -Dmaven.test.skip=true
       - name: Run tests
         run: ./mvnw -B clean verify
-      - name: Upload coverage to Codecov
+      - name: Publish code coverage
         uses: codecov/codecov-action@v1
         with:
           fail_ci_if_error: true
           verbose: false
-      - name: Test & publish code coverage
+      - name: Publish code quality
         uses: paambaati/codeclimate-action@v2.7.4
         env:
           CC_TEST_REPORTER_ID: ${{secrets.CC_TEST_REPORTER_ID}}

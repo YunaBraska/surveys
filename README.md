@@ -17,6 +17,7 @@ to [generate diagrams](#diagram-example) and to [measure answer times](#answer-d
 ![Label][label_shield]
 
 * [Motivation](#motivation)
+* [Requirements](#requirements)
 * [Class overview](#class-overview)
 * [Diagram example](#diagram-example)
 * [Usage](#usage)
@@ -40,6 +41,9 @@ The goal of this project was to build a simple, solid core library with a minima
 easily on top of it. There are no framework, no reflections, no complicated nested objects and no big dependencies (
 except the diagram thingy). A survey is easy to store in a database and to modify as its just a simple ordered list.
 
+### Requirements
+* To render Diagrams it's needed to install the library `graphviz` e.g. `brew install graphviz`, `sudo apt-get install graphviz`
+
 ### Class overview
 
 There are only few classes to use
@@ -48,7 +52,7 @@ There are only few classes to use
   answer and keep the track of the history
 * [SurveyDiagram](https://github.com/YunaBraska/surveys/blob/master/src/main/java/berlin/yuna/survey/logic/SurveyDiagram.java)
   renders a diagram of a survey
-* [Survey](https://github.com/YunaBraska/surveys/blob/master/src/main/java/berlin/yuna/survey/model/types/QuestionGeneric.java)
+* [Question](https://github.com/YunaBraska/surveys/blob/master/src/main/java/berlin/yuna/survey/model/types/QuestionGeneric.java)
   used to define a flow
 
 ### Diagram example
@@ -91,12 +95,12 @@ There are only few classes to use
 ```java
 public class CustomChoice extends Choice<String> {
 
-    //Label for diagram
+    //Label for diagram - nullable
     public CustomChoice() {
         super("If equals 1");
     }
 
-    //Return true if transition to target is allwed
+    //Return true if transition to target is allowed
     @Override
     public boolean apply(final String answer) {
         return answer.equals("1");
@@ -168,7 +172,7 @@ public class MyQuestion extends QuestionGeneric<Boolean, MyQuestion> {
 
 ```java
         Survey survey=[...]
-        survey.transitTo(Questionof("Q2"))
+        boolean success = survey.transitTo(Questionof("Q2"))
 
 ```
 
@@ -178,14 +182,12 @@ public class MyQuestion extends QuestionGeneric<Boolean, MyQuestion> {
 
 ```java
         Survey survey=[...]
-        survey.getDurationsMS()
-
+        Map<String, Long> durations=survey.getDurationsMS()
 ```
 
 #### Render a diagram
 
 * A diagram can be easily rendered of any survey (default target = javaTmpDir)
-* Requires the library `graphviz` e.g. `brew install graphviz`, `sudo apt-get install graphviz`
 
 ```java
         File path=SurveyDiagram.render(survey,"/optional/target/file.svg",FileFormat.SVG)
@@ -249,15 +251,21 @@ class SurveyExampleTest {
 ```
 
 ### TODOs
- 
-* [ ] Implement onBack conditions
-* [ ] Implement context for conditions
-* [ ] Implement groups of questions and answers?
-* [ ] Export (CSV Style) / Import flows (ConditionRegister)
-* [ ] Create more question examples like radio, checkbox, list, map,...
-* [ ] Stop never ending circular transitions
-* [ ] Implement custom exceptions
-* [ ] Add diagram title and description from survey
+
+* [ ] Core: Implement custom exceptions
+* [ ] Core: Implement onBack conditions
+* [ ] Core: Fix possible circular transition on `transitTo`
+* [ ] Feature: Survey config `autoBack=[true/false]`
+* [ ] Feature: Implement context for conditions
+* [ ] Feature: Export (CSV Style) / Import flows (ConditionRegister)
+* [ ] Feature: Add More question examples like radio, checkbox, list, map,...
+* [ ] Feature: Implement groups of questions and answers?
+* [ ] Diagram: Import from a diagram (ConditionRegisterMap)
+* [ ] Diagram: Add title and description from survey
+* [ ] Diagram: Consider exchanging `PlantUml` with `https://github.com/nidi3/graphviz-java`  
+* [ ] Diagram: Show path from Survey which a user has taken
+* [ ] Diagram: Generate heat map from List of Surveys for e.g. most, longest, never taken answers
+* [ ] Diagram: Show possible back transitions
 
 [build_shield]: https://github.com/YunaBraska/surveys/workflows/JAVA_CI/badge.svg
 

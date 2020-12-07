@@ -1,6 +1,6 @@
 package berlin.yuna.survey.model.types;
 
-import berlin.yuna.survey.model.Choice;
+import berlin.yuna.survey.model.Condition;
 import berlin.yuna.survey.model.HistoryItem;
 
 import java.util.HashSet;
@@ -177,7 +177,7 @@ public abstract class QuestionGeneric<T, C extends QuestionGeneric<T, C>> implem
      * @return returns the current object
      */
     @SuppressWarnings("unchecked")
-    public C target(final QuestionGeneric<?, ?> target, final Choice<T> condition) {
+    public C target(final QuestionGeneric<?, ?> target, final Condition<T> condition) {
         targetGet(target, condition);
         return (C) this;
     }
@@ -215,7 +215,7 @@ public abstract class QuestionGeneric<T, C extends QuestionGeneric<T, C>> implem
      *                  if no condition needs to be matched see {@link QuestionGeneric#target()}
      * @return returns the {@code target} object
      */
-    public <I extends QuestionGeneric<?, ?>> I targetGet(final I target, final Choice<T> condition) {
+    public <I extends QuestionGeneric<?, ?>> I targetGet(final I target, final Condition<T> condition) {
         return targetGet(target, condition, null);
     }
 
@@ -377,11 +377,11 @@ public abstract class QuestionGeneric<T, C extends QuestionGeneric<T, C>> implem
         }
     }
 
-    private <I extends QuestionGeneric<?, ?>> I targetGet(final I target, final Choice<T> choice, final Function<T, Boolean> function) {
-        if (choice == null && function == null) {
+    private <I extends QuestionGeneric<?, ?>> I targetGet(final I target, final Condition<T> condition, final Function<T, Boolean> function) {
+        if (condition == null && function == null) {
             routes.removeAll(routes.stream().filter(AnswerRoute::hasNoCondition).collect(Collectors.toSet()));
         }
-        routes.add(new AnswerRoute<>(target, function, choice));
+        routes.add(new AnswerRoute<>(target, function, condition));
         return target;
     }
 
@@ -415,20 +415,20 @@ public abstract class QuestionGeneric<T, C extends QuestionGeneric<T, C>> implem
     public static class AnswerRoute<T> {
         private final QuestionGeneric<?, ?> target;
         private final Function<T, Boolean> function;
-        private final Choice<T> choice;
+        private final Condition<T> condition;
 
-        public AnswerRoute(final QuestionGeneric<?, ?> target, final Function<T, Boolean> function, final Choice<T> choice) {
+        public AnswerRoute(final QuestionGeneric<?, ?> target, final Function<T, Boolean> function, final Condition<T> condition) {
             this.target = target;
-            this.choice = choice;
+            this.condition = condition;
             this.function = function;
         }
 
         public boolean apply(T answer) {
-            return (hasChoice() && choice.apply(answer)) || (hasFunction() && function.apply(answer));
+            return (hasChoice() && condition.apply(answer)) || (hasFunction() && function.apply(answer));
         }
 
         public boolean hasChoice() {
-            return choice != null;
+            return condition != null;
         }
 
         public boolean hasFunction() {
@@ -444,7 +444,7 @@ public abstract class QuestionGeneric<T, C extends QuestionGeneric<T, C>> implem
         }
 
         public String getLabel() {
-            return hasChoice() ? (choice.getLabel() != null ? choice.getLabel() : choice.getClass().getSimpleName()) : null;
+            return hasChoice() ? (condition.getLabel() != null ? condition.getLabel() : condition.getClass().getSimpleName()) : null;
         }
 
         public QuestionGeneric<?, ?> target() {
@@ -460,14 +460,14 @@ public abstract class QuestionGeneric<T, C extends QuestionGeneric<T, C>> implem
 
             if (!Objects.equals(target, that.target)) return false;
             if (!Objects.equals(function, that.function)) return false;
-            return Objects.equals(choice, that.choice);
+            return Objects.equals(condition, that.condition);
         }
 
         @Override
         public int hashCode() {
             int result = target != null ? target.hashCode() : 0;
             result = 31 * result + (function != null ? function.hashCode() : 0);
-            result = 31 * result + (choice != null ? choice.hashCode() : 0);
+            result = 31 * result + (condition != null ? condition.hashCode() : 0);
             return result;
         }
 

@@ -26,12 +26,14 @@ else
   echo "No git changes to push"
 fi
 # CREATE TAG
-if ./mvnw compile -q -DpushChanges=false -P tag; then
+TAG_A=$(git describe --tag --always --abbrev=0)
+./mvnw compile -q -DpushChanges=false -P tag $ >/dev/null || true
+if [ "${TAG_A}" == "$(git describe --tag --always --abbrev=0)" ]; then
+  echo "Tag already exists"
+else
   echo "New tag created"
-  # new branch as trigger for new release
   git branch "release" || true
+  # new branch as trigger for new release
   git push origin --all -u || true
   git push origin --tags || true
-else
-  echo "Tag already exists"
 fi

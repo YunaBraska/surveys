@@ -1,10 +1,10 @@
 package berlin.yuna.survey.model.types;
 
-import berlin.yuna.survey.model.Choice;
+import berlin.yuna.survey.model.Condition;
 
-public class CustomChoice extends Choice<String> {
+public class CustomCondition extends Condition<String> {
 
-    public CustomChoice() {
+    public CustomCondition() {
         super("If equals 1");
     }
 

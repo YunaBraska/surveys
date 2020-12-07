@@ -70,8 +70,8 @@ class QuestionGenericTest {
     @Test
     @DisplayName("Set target and get with choice [COV]")
     void targetGetWithChoiceShouldReturnInput() {
-        Question.of(Q1).targetGet(Question.of(Q2), new CustomChoice());
-        Question.of(Q3).target(Question.of(Q4), new CustomChoice());
+        Question.of(Q1).targetGet(Question.of(Q2), new CustomCondition());
+        Question.of(Q3).target(Question.of(Q4), new CustomCondition());
         assertThat(Question.of(Q1).target().iterator().next(), is(Question.of(Q2)));
         assertThat(Question.of(Q3).target().iterator().next(), is(Question.of(Q4)));
     }
@@ -194,7 +194,7 @@ class QuestionGenericTest {
     @Test
     @DisplayName("AnswerRoute [COV]")
     void checkAnswerRoute() {
-        final CustomChoice customChoice = new CustomChoice();
+        final CustomCondition customChoice = new CustomCondition();
         QuestionGeneric.AnswerRoute<String> route = new QuestionGeneric.AnswerRoute<>(Question.of(Q1), null, customChoice);
         assertThat(route.target(), is(Question.of(Q1)));
         assertThat(route.getLabel(), is(customChoice.getLabel()));
