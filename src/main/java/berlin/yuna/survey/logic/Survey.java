@@ -174,7 +174,7 @@ public class Survey {
      * @return true if there is no next {@link QuestionGeneric}
      */
     public boolean isEnded() {
-        return last.target().isEmpty() && getHistoryAnswered().filter(HistoryItem::isNotDraft).anyMatch(answer -> answer.match(last));
+        return last.targets().isEmpty() && getHistoryAnswered().filter(HistoryItem::isNotDraft).anyMatch(answer -> answer.match(last));
     }
 
     /**

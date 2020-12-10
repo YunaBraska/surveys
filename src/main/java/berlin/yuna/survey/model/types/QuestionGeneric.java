@@ -11,19 +11,23 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static berlin.yuna.survey.logic.QuestionHelper.searchInFlow;
 import static java.lang.String.format;
 import static java.util.Arrays.stream;
 import static java.util.Optional.ofNullable;
 
-@SuppressWarnings({"unused", "UnusedReturnValue"})
+@SuppressWarnings({"UnusedReturnValue"})
+//@SuppressWarnings({"unused", "UnusedReturnValue"})
 public abstract class QuestionGeneric<T, C extends QuestionGeneric<T, C>> implements Comparable<QuestionGeneric<?, ?>> {
 
     private final String label;
     private Consumer<T> onBack;
+    private final Set<QuestionGeneric<?, ?>> parents = ConcurrentHashMap.newKeySet();
     private final Set<AnswerRoute<T>> routes = ConcurrentHashMap.newKeySet();
     private static final Pattern SPECIAL_CHARS = Pattern.compile("^[A-Z_0-9]*$");
     private static final Map<String, QuestionGeneric<?, ?>> all = new ConcurrentHashMap<>();
@@ -51,7 +55,7 @@ public abstract class QuestionGeneric<T, C extends QuestionGeneric<T, C>> implem
     /**
      * Returns the specified {@link QuestionGeneric} which is the specified by this label
      *
-     * @param label The label which is configured  for the specified {@code label}
+     * @param label    The label which is configured  for the specified {@code label}
      * @param fallback if no question was found {@code label}
      * @return {@link QuestionGeneric} found by the {@code label} or {@code null} if there is no configuration for it
      */
@@ -115,18 +119,18 @@ public abstract class QuestionGeneric<T, C extends QuestionGeneric<T, C>> implem
      */
     public static Set<QuestionGeneric<?, ?>> getParentsOf(final QuestionGeneric<?, ?> flowStart, final QuestionGeneric<?, ?> question) {
         final Set<QuestionGeneric<?, ?>> result = new HashSet<>();
-        if(!flowStart.equals(question)) {
+        if (!flowStart.equals(question)) {
             getParentsOf(flowStart, question, new HashSet<>(), result);
         }
         return result;
     }
 
     private static void getParentsOf(final QuestionGeneric<?, ?> current, final QuestionGeneric<?, ?> search, final Set<QuestionGeneric<?, ?>> checked, final Set<QuestionGeneric<?, ?>> result) {
-        if (current.target().contains(search)) {
+        if (current.targets().contains(search)) {
             result.add(current);
         } else if (!checked.contains(current)) {
             checked.add(current);
-            current.target().forEach(q -> getParentsOf(q, search, checked, result));
+            current.targets().forEach(q -> getParentsOf(q, search, checked, result));
         }
     }
 
@@ -158,7 +162,7 @@ public abstract class QuestionGeneric<T, C extends QuestionGeneric<T, C>> implem
      *
      * @param target    defines the {@code target} which comes after answering
      * @param condition {@code condition} which mussed be true to route to the specified {@code target}. Can be null
-     *                  if no condition needs to be matched see {@link QuestionGeneric#target()}
+     *                  if no condition needs to be matched see {@link QuestionGeneric#targets()}
      * @return returns the current object
      */
     @SuppressWarnings("unchecked")
@@ -173,7 +177,7 @@ public abstract class QuestionGeneric<T, C extends QuestionGeneric<T, C>> implem
      *
      * @param target    defines the {@code target} which comes after answering
      * @param condition {@code condition} which mussed be true to route to the specified {@code target}. Can be null
-     *                  if no condition needs to be matched see {@link QuestionGeneric#target()}
+     *                  if no condition needs to be matched see {@link QuestionGeneric#targets()}
      * @return returns the current object
      */
     @SuppressWarnings("unchecked")
@@ -199,7 +203,7 @@ public abstract class QuestionGeneric<T, C extends QuestionGeneric<T, C>> implem
      *
      * @param target    defines the {@code target} which comes after answering
      * @param condition {@code condition} which mussed be true to route to the specified {@code target}. Can be null
-     *                  if no condition needs to be matched see {@link QuestionGeneric#target()}
+     *                  if no condition needs to be matched see {@link QuestionGeneric#targets()}
      * @return returns the {@code target} object
      */
     public <I extends QuestionGeneric<?, ?>> I targetGet(final I target, final Function<T, Boolean> condition) {
@@ -212,7 +216,7 @@ public abstract class QuestionGeneric<T, C extends QuestionGeneric<T, C>> implem
      *
      * @param target    defines the {@code target} which comes after answering
      * @param condition {@code condition} which mussed be true to route to the specified {@code target}. Can be null
-     *                  if no condition needs to be matched see {@link QuestionGeneric#target()}
+     *                  if no condition needs to be matched see {@link QuestionGeneric#targets()}
      * @return returns the {@code target} object
      */
     public <I extends QuestionGeneric<?, ?>> I targetGet(final I target, final Condition<T> condition) {
@@ -224,8 +228,17 @@ public abstract class QuestionGeneric<T, C extends QuestionGeneric<T, C>> implem
      *
      * @return a set view of all configured {@code targets} for this {@link QuestionGeneric} object
      */
-    public Set<QuestionGeneric<?, ?>> target() {
+    public Set<QuestionGeneric<?, ?>> targets() {
         return routes.stream().map(AnswerRoute::target).collect(Collectors.toSet());
+    }
+
+    /**
+     * Returns a {@link Set} with all configured targets
+     *
+     * @return a set view of all configured {@code targets} for this {@link QuestionGeneric} object
+     */
+    public Set<QuestionGeneric<?, ?>> parents() {
+        return new HashSet<>(parents);
     }
 
     /**
@@ -361,7 +374,7 @@ public abstract class QuestionGeneric<T, C extends QuestionGeneric<T, C>> implem
             return true;
         } else if (!checked.contains(current)) {
             checked.add(current);
-            return current.target().stream().anyMatch(q -> containsTarget(q, search, checked));
+            return current.targets().stream().anyMatch(q -> containsTarget(q, search, checked));
         } else {
             return false;
         }
@@ -377,13 +390,74 @@ public abstract class QuestionGeneric<T, C extends QuestionGeneric<T, C>> implem
         }
     }
 
+    @SuppressWarnings({"unchecked"})
     private <I extends QuestionGeneric<?, ?>> I targetGet(final I target, final Condition<T> condition, final Function<T, Boolean> function) {
-        if (condition == null && function == null) {
-            routes.removeAll(routes.stream().filter(AnswerRoute::hasNoCondition).collect(Collectors.toSet()));
+        if (target == null) {
+            throw new IllegalArgumentException("Invalid target [null]");
         }
-        routes.add(new AnswerRoute<>(target, function, condition));
-        return target;
+
+        final I flowTarget = (I) searchInFlow(target, this).orElse(target);
+        if (condition == null && function == null) {
+            removeTargets(AnswerRoute::hasNoCondition);
+        }
+
+        //merge
+        target.routes().forEach(flowTarget::addTarget);
+        target.parents().forEach(flowTarget::addParent);
+//        flowTarget.routes.addAll(target.routes);
+//        flowTarget.parents.addAll(target.parents);
+
+        //add route to patent and child
+        routes.add(new AnswerRoute<>(flowTarget, function, condition));
+        flowTarget.addParent(this);
+        return flowTarget;
     }
+
+    @SuppressWarnings({"unchecked"})
+    protected void addTarget(final AnswerRoute<?> route){
+        routes.add((AnswerRoute<T>) route);
+    }
+
+    protected void addParent(final QuestionGeneric<?, ?> parent){
+        parents.add(parent);
+    }
+
+    private void removeTargets(final Predicate<AnswerRoute<T>> filter) {
+        final Set<AnswerRoute<T>> connections = routes.stream().filter(filter).collect(Collectors.toSet());
+        connections.forEach(route -> route.target.parents.remove(this));
+        routes.removeAll(connections);
+    }
+
+//
+//    private Optional<QuestionGeneric<?, ?>> getParent(final String search) {
+//        return getParent(this, search, new HashSet<>());
+//    }
+//
+//    private Optional<QuestionGeneric<?, ?>> getParent(final QuestionGeneric<?, ?> current, final String search, final HashSet<String> checked) {
+//        if (current.label.equals(search)) {
+//            return Optional.of(current);
+//        } else if (!checked.contains(current.label)) {
+//            checked.add(current.label);
+//            return current.parents.stream().flatMap(q -> getParent(q, search, checked).stream()).findFirst();
+//        } else {
+//            return Optional.empty();
+//        }
+//    }
+//
+//    private Optional<QuestionGeneric<?, ?>> getTarget(final String search) {
+//        return getTarget(this, search, new HashSet<>());
+//    }
+//
+//    private Optional<QuestionGeneric<?, ?>> getTarget(final QuestionGeneric<?, ?> current, final String search, final HashSet<String> checked) {
+//        if (current.label.equals(search)) {
+//            return Optional.of(current);
+//        } else if (!checked.contains(current.label)) {
+//            checked.add(current.label);
+//            return current.routes.stream().map(AnswerRoute::target).flatMap(q -> getTarget(q, search, checked).stream()).findFirst();
+//        } else {
+//            return Optional.empty();
+//        }
+//    }
 
     @Override
     public boolean equals(Object o) {

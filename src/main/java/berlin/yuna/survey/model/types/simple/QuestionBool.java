@@ -6,7 +6,6 @@ import java.util.Optional;
 
 public class QuestionBool extends QuestionGeneric<Boolean, QuestionBool> {
 
-
     @Override
     public Optional<Boolean> parse(final Object answer) {
         if (answer instanceof Boolean) {
@@ -44,7 +43,7 @@ public class QuestionBool extends QuestionGeneric<Boolean, QuestionBool> {
         return false;
     }
 
-    private QuestionBool(String label) {
+    public QuestionBool(String label) {
         super(label);
     }
 }

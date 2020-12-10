@@ -125,7 +125,7 @@ public class SurveyDiagram {
             //STOP ENDLESS CIRCULATION
             if (link(previous, current, route.getLabel())) {
                 //CHOICE
-                if (question.target().size() > 1) {
+                if (question.targets().size() > 1) {
                     ILeaf option = createLeaf(LeafType.BRANCH, question.label() + "_CHOICE");
                     link(current, option, null);
                     current = option;

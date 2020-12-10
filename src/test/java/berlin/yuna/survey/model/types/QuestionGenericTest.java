@@ -43,6 +43,11 @@ class QuestionGenericTest {
     }
 
     @Test
+    void circularlyTest() {
+        new QuestionBool(Q1).target(Question.of(Q3)).targetGet(Question.of(Q2)).target(new QuestionInt(Q1));
+    }
+
+    @Test
     @DisplayName("Delete cache, routes and config")
     void deleteCacheAndRouted() {
         assertThat(Question.of(Q1), is(equalTo(Question.get(Q.Q1))));
@@ -72,8 +77,8 @@ class QuestionGenericTest {
     void targetGetWithChoiceShouldReturnInput() {
         Question.of(Q1).targetGet(Question.of(Q2), new CustomCondition());
         Question.of(Q3).target(Question.of(Q4), new CustomCondition());
-        assertThat(Question.of(Q1).target().iterator().next(), is(Question.of(Q2)));
-        assertThat(Question.of(Q3).target().iterator().next(), is(Question.of(Q4)));
+        assertThat(Question.of(Q1).targets().iterator().next(), is(Question.of(Q2)));
+        assertThat(Question.of(Q3).targets().iterator().next(), is(Question.of(Q4)));
     }
 
     @Test
@@ -82,7 +87,7 @@ class QuestionGenericTest {
         Question.of(Q1).target(Question.of(Q2)).target(Question.of(Q3), a -> a.equalsIgnoreCase("fail"));
         Question.of(Q2).target(Question.of(Q4)).target(Question.of(Q5), a -> a.equalsIgnoreCase("ok"));
 
-        Set<QuestionGeneric<?, ?>> targets = Question.get(Q1).target();
+        Set<QuestionGeneric<?, ?>> targets = Question.get(Q1).targets();
         assertThat(targets, hasItems(Question.get(Q2), Question.get(Q3)));
         assertThat(targets, not(hasItems(Question.get(Q1), Question.get(Q4), Question.get(Q5))));
     }
@@ -93,7 +98,7 @@ class QuestionGenericTest {
         Question.of(Q1).target(QuestionBool.of(Q2));
         Question.of(Q1).target(QuestionInt.of(Q3));
 
-        Set<QuestionGeneric<?, ?>> targets = Question.get(Q1).target();
+        Set<QuestionGeneric<?, ?>> targets = Question.get(Q1).targets();
         assertThat(targets, not(hasItems(Question.get(Q2))));
         assertThat(targets, hasItems(Question.get(Q3)));
     }

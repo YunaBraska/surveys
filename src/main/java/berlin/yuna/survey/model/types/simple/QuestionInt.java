@@ -6,7 +6,6 @@ import java.util.Optional;
 
 public class QuestionInt extends QuestionGeneric<Integer, QuestionInt> {
 
-
     @Override
     public Optional<Integer> parse(final Object answer) {
         try {
@@ -27,7 +26,7 @@ public class QuestionInt extends QuestionGeneric<Integer, QuestionInt> {
         return getOrNew(label, QuestionInt.class, () -> new QuestionInt(label));
     }
 
-    private QuestionInt(String label) {
+    public QuestionInt(String label) {
         super(label);
     }
 }
