@@ -37,9 +37,10 @@ to [generate diagrams](#diagram-example) and to [measure answer times](#answer-d
 
 ### Motivation
 
-The goal of this project was to build a simple, solid core library with a minimalistic style. Means everyone can build
-easily on top of it. There are no framework, no reflections, no complicated nested objects and no big dependencies (
-except the diagram thingy). A survey is easy to store in a database and to modify as its just a simple ordered list.
+The goal of this project was to build a simple, solid core workflow/state machine library with a minimalistic style. 
+Means everyone can build easily on top of it. 
+There are no framework, no reflections, no complicated nested objects and no big dependencies (except the diagram thingy). 
+A survey is easy to store in a database and to modify as its just a simple ordered list.
 
 ### Requirements
 * To render Diagrams it's needed to install the library `graphviz` e.g. `brew install graphviz`, `sudo apt-get install graphviz`
@@ -271,15 +272,15 @@ class SurveyExampleTest {
 
 [build_shield]: https://github.com/YunaBraska/surveys/workflows/JAVA_CI/badge.svg
 
-[build_link]: https://github.com/YunaBraska/surveys/actions
+[build_link]: https://github.com/YunaBraska/surveys/actions?query=workflow%3AJAVA_CI
 
 [maintainable_shield]: https://img.shields.io/codeclimate/maintainability/YunaBraska/surveys?style=flat-square
 
 [maintainable_link]: https://codeclimate.com/github/YunaBraska/surveys/maintainability
 
-[coverage_shield]: https://img.shields.io/codecov/c/github/YunaBraska/surveys?style=flat-square
+[coverage_shield]: https://img.shields.io/codeclimate/coverage/YunaBraska/surveys?style=flat-square
 
-[coverage_link]: https://codecov.io/gh/YunaBraska/surveys?branch=master
+[coverage_link]: https://codeclimate.com/github/YunaBraska/surveys/test_coverage
 
 [issues_shield]: https://img.shields.io/github/issues/YunaBraska/surveys?style=flat-square
 

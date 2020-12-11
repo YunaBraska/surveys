@@ -35,7 +35,7 @@ if [ "${TAG_OLD}" == "${TAG_NEW}" ] && [ "${TAG_NEW}" == "${VERSION}" ]; then
   echo "Tag already exists"
 else
   echo "New tag created"
-  git branch "release" || true
+  git branch "release" &>/dev/null || true
   # new branch as trigger for new release
   git push origin --all -u || true
   git push origin --tags || true

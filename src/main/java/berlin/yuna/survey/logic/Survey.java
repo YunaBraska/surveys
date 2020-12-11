@@ -58,7 +58,7 @@ public class Survey {
         }
         context.history.clear();
         context.history.addAll(linkedHistory);
-        context.last = linkedHistory.isEmpty() ? flowStart : context.findLast(linkedHistory);
+        context.last = context.findLast(linkedHistory);
         context.flowStart = context.findFirst();
         return context;
     }
