@@ -1,9 +1,9 @@
 package berlin.yuna.survey.logic;
 
 import berlin.yuna.survey.model.HistoryItem;
+import berlin.yuna.survey.model.exception.QuestionNotFoundException;
 import berlin.yuna.survey.model.types.QuestionGeneric;
 import berlin.yuna.survey.model.types.simple.Question;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -50,31 +50,6 @@ class SurveyTest {
         Q1, Q2, Q3, Q4, Q5
     }
 
-    @BeforeEach
-    void setUp() {
-        Question.clearAll();
-    }
-
-    @Test
-    @DisplayName("Init with enum")
-    void initWithEnum() {
-        assertThrows(IllegalArgumentException.class, () -> Survey.init(Q.Q1), "Missing QuestionGeneric given was null");
-        final Question q1 = Question.of(Q1);
-        final Survey survey = Survey.init(Q.Q1);
-        assertThat(survey, is(notNullValue()));
-        assertThat(survey.get(), is(q1));
-    }
-
-    @Test
-    @DisplayName("Init with String")
-    void initWithString() {
-        assertThrows(IllegalArgumentException.class, () -> Survey.init(Q1), "Missing QuestionGeneric given was null");
-        final Question q1 = Question.of(Q.Q1);
-        final Survey survey = Survey.init(Q1);
-        assertThat(survey, is(notNullValue()));
-        assertThat(survey.get(), is(q1));
-    }
-
     @Test
     @DisplayName("Init with Question")
     void initWithQuestion() {
@@ -86,28 +61,26 @@ class SurveyTest {
     @Test
     @DisplayName("Init with null")
     void initWithNull() {
-        Enum<?> e = null;
-        Question q = null;
-        String s = null;
-        assertThrows(IllegalArgumentException.class, () -> Survey.init(e));
-        assertThrows(IllegalArgumentException.class, () -> Survey.init(q));
-        assertThrows(IllegalArgumentException.class, () -> Survey.init(s));
+        assertThrows(IllegalArgumentException.class, () -> Survey.init(null));
     }
 
     @Test
     @DisplayName("Init from history without answer")
     void initFlowFromHistoryWithoutAnswer() {
-        final Survey survey = Survey.init(Question.of(START));
-        assertThat(survey.get(), is(Question.of(START)));
+        final Question flow = Question.of(START);
+        final Survey survey = Survey.init(flow);
+        assertThat(survey.get(), is(flow));
 
-        final Survey reloaded = Survey.init(survey.getHistory());
-        assertThat(reloaded.get(), is(Question.of(START)));
+        final Survey reloaded = Survey.init(flow, survey.getHistory());
+        assertThat(reloaded.get(), is(flow));
     }
 
     @Test
     @DisplayName("Init from empty history")
     void intFlowFromEmptyHistory() {
-        assertThrows(IllegalArgumentException.class, () -> Survey.init(new HashSet<>()), "Missing QuestionGeneric, given was null");
+        final Survey survey = Survey.init(Question.of(Q.Q1), new HashSet<>());
+        assertThat(survey, is(notNullValue()));
+        assertThat(survey.get(), is(Question.of(Q.Q1)));
     }
 
     //TODO: from finished history?
@@ -121,7 +94,7 @@ class SurveyTest {
         assertThat(survey.getPrevious(), is(notNullValue()));
         assertThat(survey.get(), is(not(equalTo(survey.getPrevious()))));
 
-        final Survey surveyCopy = Survey.init(survey.getHistory());
+        final Survey surveyCopy = Survey.init(survey.getFirst(), survey.getHistory());
         assertThat(surveyCopy.get(), is(equalTo(survey.get())));
         assertThat(surveyCopy.getPrevious(), is(equalTo(survey.getPrevious())));
     }
@@ -130,11 +103,11 @@ class SurveyTest {
     @DisplayName("Get")
     void getShouldReturnCurrentQuestion() {
         final Survey survey = createSimpleSurvey();
-        Question.get(START).target(Question.get(Q3), answer -> answer.equals("1"));
+        survey.getFirst().target(Question.of(Q3), answer -> answer.equals("1"));
 
-        assertThat(survey.get(), equalTo(Question.get(START)));
+        assertThat(survey.get(), equalTo(Question.of(START)));
         survey.answer("1");
-        assertThat(survey.get(), equalTo(Question.get(Q3)));
+        assertThat(survey.get(), equalTo(Question.of(Q3)));
     }
 
     @Test
@@ -142,7 +115,7 @@ class SurveyTest {
     void firstShouldReturnFirstQuestion() {
         final Survey survey = createSimpleSurvey();
         survey.answer("1").answer("2").answer("3");
-        assertThat(survey.getFirst(), is(Question.get(START)));
+        assertThat(survey.getFirst(), is(Question.of(START)));
     }
 
     @Test
@@ -167,7 +140,7 @@ class SurveyTest {
     @DisplayName("Simple forward flow with answer")
     void flowForwardShouldMoveToTargetOnAnswer() {
         final Survey survey = createSimpleSurvey();
-        Question.get(Q1).target(Question.get(Q3), answer -> answer.equals("1"));
+        survey.get(Q1).target(survey.get(Q3), answer -> answer.equals("1"));
 
         final AtomicInteger count = new AtomicInteger(1);
         while (!survey.isEnded()) {
@@ -188,12 +161,17 @@ class SurveyTest {
     void transitionBackAndForward() {
         final AtomicBoolean backTriggered = new AtomicBoolean(false);
         final Survey survey = createSimpleSurvey().answer(START).answer(Q1).answer(Q2);
-        Question.of(Q2).onBack(answer -> backTriggered.set(true));
+        survey.get(Q2).onBack(answer -> backTriggered.set(true));
+
+        //INVALID TARGET
+        assertThrows(QuestionNotFoundException.class, () -> survey.transitTo(Question.of(Q4)));
+        QuestionGeneric<?, ?> before = survey.get();
+        //SAME TARGET
+        survey.transitTo(survey.get());
+        assertThat(survey.get(), is(equalTo(before)));
 
         //BACKWARD
-        QuestionGeneric<?, ?> before = survey.get();
         survey.transitTo(Question.of(Q1));
-
         assertThat(survey.get(), is(equalTo(Question.of(Q1))));
         assertThat(survey.getPrevious(), is(equalTo(Question.of(START))));
         assertThat(backTriggered.get(), is(true));
@@ -211,19 +189,31 @@ class SurveyTest {
     @Test
     @DisplayName("Get previous")
     void getPrevious() {
-        Question.of(START)
-                .target(Question.of(Q2).target(Question.of(Q4)), answer -> answer.equals("yes"))
-                .target(Question.of(Q3).target(Question.of(Q4)), answer -> answer.equals("no"));
-        Question.of(Q4).target(Question.of(END));
-        assertThat(Survey.init(Question.of(START)).getPrevious(), is(nullValue()));
+        final Question flow = Question.of(START);
+        final Question endFlow = Question.of(END);
+        flow.target(Question.of(Q2).target(endFlow), answer -> answer.equals("yes"));
+        flow.target(Question.of(Q3).target(endFlow), answer -> answer.equals("no"));
 
-        final Survey flowYes = Survey.init(Question.of(START)).answer("yes");
+        assertThat(Survey.init(flow).getPrevious(), is(nullValue()));
+        final Survey flowYes = Survey.init(flow).answer("yes");
         assertThat(flowYes.get(), is(equalTo(Question.of(Q2))));
         assertThat(flowYes.answer(Q4).getPrevious(), is(equalTo(Question.of(Q2))));
 
-        final Survey flowNo = Survey.init(Question.of(START)).answer("no");
+        final Survey flowNo = Survey.init(flow).answer("no");
         assertThat(flowNo.get(), is(equalTo(Question.of(Q3))));
         assertThat(flowNo.answer(Q4).getPrevious(), is(equalTo(Question.of(Q3))));
+    }
+
+    @Test
+    @DisplayName("Get [COV]")
+    void get() {
+        final Survey survey = Survey.init(Question.of(START).target(Question.of(Q1).target(Question.of(Q2))));
+        assertThat(survey.get(), is(equalTo(Question.of(START))));
+        assertThat(survey.get(Q1), is(equalTo(Question.of(Q1))));
+        assertThat(survey.get(Q.Q1), is(equalTo(Question.of(Q1))));
+        assertThat(survey.get(Question.of(Q1)), is(equalTo(Question.of(Q1))));
+        assertThat(survey.get(Q.Q3), is(nullValue()));
+
     }
 
     public static Survey createSimpleSurvey() {

@@ -31,7 +31,7 @@ public class QuestionBool extends QuestionGeneric<Boolean, QuestionBool> {
     }
 
     public static QuestionBool of(final String label) {
-        return getOrNew(label, QuestionBool.class, () -> new QuestionBool(label));
+        return new QuestionBool(label);
     }
 
     private boolean equalsIgnoreCase(final String text, final String... anyMatch) {

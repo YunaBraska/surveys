@@ -23,7 +23,7 @@ public class QuestionInt extends QuestionGeneric<Integer, QuestionInt> {
     }
 
     public static QuestionInt of(final String label) {
-        return getOrNew(label, QuestionInt.class, () -> new QuestionInt(label));
+        return new QuestionInt(label);
     }
 
     public QuestionInt(String label) {

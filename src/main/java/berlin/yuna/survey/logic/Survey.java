@@ -12,7 +12,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collector;
@@ -20,64 +19,47 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static java.util.stream.Collectors.toList;
+import static berlin.yuna.survey.model.exception.QuestionNotFoundException.itemNotFound;
+import static berlin.yuna.survey.model.exception.QuestionNotFoundException.itemNotFoundInHistory;
 
 public class Survey {
 
     private QuestionGeneric<?, ?> last;
+    private QuestionGeneric<?, ?> flowStart;
+    private boolean autoBackTransition = true; //TODO: move on with config
     //https://stackoverflow.com/questions/4724995/lock-free-concurrent-linked-list-in-java
     private final LinkedList<HistoryItem> history = new LinkedList<>();
 
     /**
      * Starts new SurveyCtx
      *
-     * @param startQuestion {@link QuestionGeneric} to start with
+     * @param flowStart start item of the flow
      * @return {@link Survey}
      * @throws IllegalStateException on {@code null}
      */
-    public static Survey init(final Enum<?> startQuestion) {
-        if (startQuestion == null) {
-            throw new IllegalArgumentException("Missing enum, given was null");
-        }
-        return new Survey(QuestionGeneric.get(startQuestion.name()));
-    }
-
-    /**
-     * Starts new SurveyCtx
-     *
-     * @param startQuestion {@link QuestionGeneric} to start with
-     * @return {@link Survey}
-     * @throws IllegalStateException on {@code null} or when the {@link QuestionGeneric} was not found
-     */
-    public static Survey init(final String startQuestion) {
-        return new Survey(QuestionGeneric.get(startQuestion));
-    }
-
-    /**
-     * Starts new SurveyCtx
-     *
-     * @param startQuestion {@link QuestionGeneric} to start with
-     * @return {@link Survey}
-     * @throws IllegalStateException on {@code null}
-     */
-    public static Survey init(final QuestionGeneric<?, ?> startQuestion) {
-        return new Survey(startQuestion);
+    public static Survey init(final QuestionGeneric<?, ?> flowStart) {
+        return new Survey(flowStart);
     }
 
     /**
      * Continues {@link Survey} from a history
      * Removes all invalid {@link QuestionGeneric} items from the history
      *
-     * @param history should not be empty as {@link Survey} needs a start item
+     * @param flowStart start item of the flow
+     * @param history   should not be empty as {@link Survey} needs a start item
      * @return {@link Survey}
      * @throws IllegalStateException when the {@code history} is empty or has no valid {@link QuestionGeneric}
      */
-    public static Survey init(final Iterable<HistoryItem> history) {
-        final LinkedList<HistoryItem> linkedHistory = StreamSupport.stream(history.spliterator(), false).filter(answer -> QuestionGeneric.exists(answer.getLabel())).collect(Collectors.toCollection(LinkedList::new));
-        Survey context = init(linkedHistory.isEmpty() ? null : linkedHistory.getFirst().getLabel());
+    public static Survey init(final QuestionGeneric<?, ?> flowStart, final Iterable<HistoryItem> history) {
+        Survey context = init(flowStart);
+        final LinkedList<HistoryItem> linkedHistory = StreamSupport.stream(history.spliterator(), false).filter(answer -> flowStart.get(answer.getLabel()).isPresent()).collect(Collectors.toCollection(LinkedList::new));
+        if (linkedHistory.isEmpty()) {
+            return init(flowStart);
+        }
         context.history.clear();
         context.history.addAll(linkedHistory);
-        context.last = findLast(linkedHistory);
+        context.last = linkedHistory.isEmpty() ? flowStart : context.findLast(linkedHistory);
+        context.flowStart = context.findFirst();
         return context;
     }
 
@@ -89,7 +71,7 @@ public class Survey {
      * @throws IllegalArgumentException if the label is not part of the flow or when the forward transition has not enough answers
      */
     public boolean transitTo(final String label) {
-        return transitTo(QuestionGeneric.get(label));
+        return transitTo(last.get(label).orElseThrow(() -> itemNotFound(label, flowStart.label())));
     }
 
     /**
@@ -105,9 +87,7 @@ public class Survey {
             return true;
         }
         boolean result = true;
-        assertExists(target);
-        QuestionGeneric<?, ?> flowStart = getFirst();
-        assertQuestionBelongsToFlow(target, flowStart);
+        assertQuestionBelongsToFlow(target);
 
         if (history.stream().filter(HistoryItem::isNotDraft).anyMatch(target::match)) {
             result = runBackTransitions(target);
@@ -149,14 +129,47 @@ public class Survey {
     }
 
     /**
+     * Get a flow item by the given {@code String}
+     * To avoid cast its recommended to use {@link QuestionGeneric#get(QuestionGeneric)}
+     *
+     * @param label The {@code label} to search in flow
+     * @return Returns {@link Optional<QuestionGeneric>} or {@code null} when flow doesn't contain the
+     * requested item
+     */
+    public QuestionGeneric<?, ?> get(final String label) {
+        return flowStart.get(label).orElse(null);
+    }
+
+    /**
+     * Get a flow item by the given {@code enum}
+     * To avoid cast its recommended to use {@link QuestionGeneric#get(QuestionGeneric)}
+     *
+     * @param label The {@code label} to search in flow
+     * @return Returns {@link QuestionGeneric} or {@code null} when flow doesn't contain the
+     * requested item
+     */
+    public QuestionGeneric<?, ?> get(final Enum<?> label) {
+        return flowStart.get(label).orElse(null);
+    }
+
+    /**
+     * Get a flow item by the given {@link QuestionGeneric}
+     *
+     * @param type {@link QuestionGeneric} to search in flow
+     * @return Returns {@link QuestionGeneric} or {@code null} when flow doesn't contain the
+     * requested item
+     */
+    public <I extends QuestionGeneric<?, ?>> I get(final I type) {
+        return flowStart.get(type).orElse(null);
+    }
+
+    /**
      * Get previous {@link QuestionGeneric} from the flow
      *
      * @return previous {@link QuestionGeneric} and {@code null} if there is no previous entry
      */
     public QuestionGeneric<?, ?> getPrevious() {
-        final List<HistoryItem> answers = getHistoryAnswered().collect(toList());
-        final Set<QuestionGeneric<?, ?>> parents = getFirst().getParentsOf(get());
-        return parents.stream().filter(parent -> answers.stream().anyMatch(answer -> answer.match(parent))).findFirst().orElse(parents.isEmpty() ? null : parents.iterator().next());
+        return last.parents().stream().filter(q -> getHistoryAnswered().anyMatch(item -> item.match(q))).findFirst().orElse(null);
     }
 
     /**
@@ -165,7 +178,7 @@ public class Survey {
      * @return first {@link QuestionGeneric} of the current flow
      */
     public QuestionGeneric<?, ?> getFirst() {
-        return QuestionGeneric.get(history.getFirst().getLabel());
+        return flowStart;
     }
 
     /**
@@ -228,12 +241,21 @@ public class Survey {
         return result;
     }
 
-    private static QuestionGeneric<?, ?> findLast(final LinkedList<HistoryItem> historySorted) {
-        return QuestionGeneric.get(historySorted.stream()
+    protected QuestionGeneric<?, ?> findLast(final LinkedList<HistoryItem> historySorted) {
+        final String label = historySorted.stream()
                 .filter(HistoryItem::isNotAnswered).findFirst()
                 .map(HistoryItem::getLabel)
-                .orElse(historySorted.getLast().getLabel())
-        );
+                .orElse(historySorted.getLast().getLabel());
+        return flowStart.get(label).orElseThrow(() -> itemNotFoundInHistory(label, flowStart.label()));
+    }
+
+    /**
+     * Find first {@link QuestionGeneric} of the flow
+     *
+     * @return first {@link QuestionGeneric} of the current flow
+     */
+    private QuestionGeneric<?, ?> findFirst() {
+        return flowStart.get(history.getFirst().getLabel()).orElseThrow(() -> itemNotFound(history.getFirst().getLabel(), flowStart.label()));
     }
 
     private Stream<HistoryItem> getHistoryAnswered() {
@@ -273,6 +295,7 @@ public class Survey {
         assertExists(startQuestion);
         this.last = startQuestion;
         markAsCurrent(last.label());
+        flowStart = startQuestion;
     }
 
     private void assertExists(QuestionGeneric<?, ?> startQuestion) {
@@ -288,25 +311,25 @@ public class Survey {
             if (!answer.isAnswered()) {
                 history.remove(answer);
                 continue;
-            } else if (!QuestionGeneric.get(answer.getLabel()).onBack(answer.getAnswer())) {
+            } else if (!flowStart.get(answer.getLabel()).map(q -> q.onBack(answer.getAnswer())).orElse(autoBackTransition)) {
                 markAsDraft(answer.getLabel());
-                last = QuestionGeneric.getOrElse(answer.getLabel(), last);
+                last = flowStart.getOrElse(answer.getLabel(), last);
                 return false;
             } else if (answer.getLabel().equals(question.label())) {
                 markAsDraft(answer.getLabel());
-                last = QuestionGeneric.getOrElse(answer.getLabel(), last);
+                last = flowStart.getOrElse(answer.getLabel(), last);
                 return true;
             }
             markAsDraft(answer.getLabel());
-            last = QuestionGeneric.getOrElse(answer.getLabel(), last);
+            last = flowStart.getOrElse(answer.getLabel(), last);
         }
         return true;
     }
 
-    private void assertQuestionBelongsToFlow(final QuestionGeneric<?, ?> question, final QuestionGeneric<?, ?> flowStart) {
-        if (!QuestionGeneric.get(flowStart.label()).containsTarget(question)) {
-            //FIXME: custom checked exception
-            throw new IllegalArgumentException("[" + question.label() + "] is not a part of the flow from [" + flowStart.label() + "]");
+    private void assertQuestionBelongsToFlow(final QuestionGeneric<?, ?> question) {
+        assertExists(question);
+        if (flowStart.get(question.label()).isEmpty()) {
+            throw itemNotFoundInHistory(question.label(), flowStart.label());
         }
     }
 

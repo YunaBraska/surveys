@@ -64,7 +64,7 @@ There are only few classes to use
 #### Define a flow
 
 ```java
-  Question.of("START")
+  Question flow = Question.of("START")
         .targetGet(Question.of("Q1"))
         .targetGet(Question.of("Q2"))
         .targetGet(Question.of("Q3"))
@@ -74,7 +74,7 @@ There are only few classes to use
 #### Define a condition
 
 ```java
-  QuestionBool start QuestionBool.of("START");
+  QuestionBool flow =  QuestionBool.of("START");
         start.target(Question.of("OPTION_01"),answer->answer==true);
         start.target(Question.of("OPTION_02"),new MyConditionService());
 ```
@@ -86,8 +86,7 @@ There are only few classes to use
 * Back conditions can block the backward transitions (Not implemented)
 
 ```java
-    AtomicBoolean isBackTriggered=new AtomicBoolean(false);
-        Question.of("Q1")).onBack(oldAnswer->isBackTriggered.set(true);
+    Question flow = Question.of("Q1").onBack(oldAnswer-> myOnBackFunction());
 ```
 
 #### Define custom condition
@@ -126,23 +125,26 @@ public class MyQuestion extends QuestionGeneric<Boolean, MyQuestion> {
 
 #### Start a survey
 
-* Surveys are used to keep track of the answer history
+* Surveys are used for
+  * Answering the flow
+  * Tracking the answer history
+  * Soring the flow config/behavior
 
 ```java
-    Question myFlow=Question.of(Q1);
-        Survey mySurvey=Survey.init(myFlow);
+    Question flow = Question.of(START);
+    Survey mySurvey = Survey.init(myFlow);
 
 ```
 
 #### Answer a survey
 
-* Surveys answer always the current question in the flow
+* Surveys answers always the current question in the flow
 
 ```java
-    Question myFlow=Question.of(Q1).target(Question.of(Q2));
-        Survey mySurvey=Survey.init(myFlow);
-        mySurvey.answer("Yes") //Answers the first question (Q1)
-        mySurvey.answer("Yes") //Answers the second question (Q2)
+    Question flow = Question.of(Q1).target(Question.of(Q2));
+        Survey survey = Survey.init(myFlow);
+        survey.answer("Yes") //Answers the first question (Q1)
+        survey.answer("Yes") //Answers the second question (Q2)
 
 ```
 
@@ -151,8 +153,8 @@ public class MyQuestion extends QuestionGeneric<Boolean, MyQuestion> {
 * Export a survey can be useful to save the current state like to a DB
 
 ```java
-        Survey mySurvey=Survey.init(Question.of(MYFLOW));
-        List<HistoryItem> history=mySurvey.getHistory(); //The order is important - time is UTC
+        Survey survey = Survey.init(Question.of(MYFLOW));
+        List<HistoryItem> history = survey.getHistory(); //The order is important - time is UTC
 
 ```
 
@@ -161,8 +163,8 @@ public class MyQuestion extends QuestionGeneric<Boolean, MyQuestion> {
 * Importing a survey can be useful to continue a previous survey
 
 ```java
-        List<HistoryItem> history=[...]
-        Survey myContinuedSurvey=Survey.init(history);
+        List<HistoryItem> history = [...]
+        Survey survey=Survey.init(history);
 
 ```
 
@@ -171,8 +173,8 @@ public class MyQuestion extends QuestionGeneric<Boolean, MyQuestion> {
 * Transitioning back and forth won't lose the answer history
 
 ```java
-        Survey survey=[...]
-        boolean success = survey.transitTo(Questionof("Q2"))
+        Survey survey = [...]
+        boolean success = survey.transitTo("Q2")
 
 ```
 
@@ -181,7 +183,7 @@ public class MyQuestion extends QuestionGeneric<Boolean, MyQuestion> {
 * Surveys can output the time spent to answer for answering the questions
 
 ```java
-        Survey survey=[...]
+        Survey survey = [...]
         Map<String, Long> durations=survey.getDurationsMS()
 ```
 
@@ -200,18 +202,18 @@ class SurveyExampleTest {
 
     @Test
     void testSurvey() {
-        final QuestionBool start = QuestionBool.of("START");
+        final QuestionBool flow = QuestionBool.of("START");
         final AtomicBoolean question2BackTriggered = new AtomicBoolean(false);
 
         //DEFINE FLOW
-        start.target(Question.of("Q1_TRUE"), answer -> answer == true);
-        start.targetGet(Question.of("Q1_FALSE"), answer -> answer == false)
+        flow.target(Question.of("Q1_TRUE"), answer -> answer == true);
+        flow.targetGet(Question.of("Q1_FALSE"), answer -> answer == false)
                 .targetGet(Question.of("Q2")).onBack(oldAnswer -> question2BackTriggered.set(true))
                 .targetGet(Question.of("Q3"))
                 .targetGet(Question.of("END"));
 
         //CREATE survey that manages the history / context
-        final Survey survey01 = Survey.init(start);
+        final Survey survey01 = Survey.init(flow);
 
         //EXECUTE survey flow
         assertThat(survey01.get(), is(equalTo(QuestionBool.of("START"))));
@@ -224,10 +226,10 @@ class SurveyExampleTest {
         assertThat(survey01.answer("No").get(), is(equalTo(Question.of("Q1_FALSE"))));
 
         //EXPORT / IMPORT
-        List<SurveyAnswer> export = survey01.getHistory();
-        final Survey survey02 = Survey.init(export);
+        List<HistoryItem> export = survey01.getHistory();
+        final Survey survey02 = Survey.init(flow, export);
         assertThat(export, is(equalTo(survey02.getHistory())));
-        assertThat(survey02.get(), is(equalTo(Question.of("Q1_FALSE"))));
+        assertThat(survey02.get(), is(equalTo(survey01.get())));
         assertThat(survey02.answer("next").get(), is(equalTo(Question.of("Q2"))));
         assertThat(survey02.answer("next").get(), is(equalTo(Question.of("Q3"))));
         assertThat(survey02.answer("next").get(), is(equalTo(Question.of("END"))));
@@ -245,7 +247,7 @@ class SurveyExampleTest {
         assertThat(survey02.isEnded(), is(true));
 
         //IMPORT FINISHED FLOW
-        assertThat(Survey.init(survey02.getHistory()).isEnded(), is(true));
+        assertThat(Survey.init(flow, survey02.getHistory()).isEnded(), is(true));
     }
 }
 ```

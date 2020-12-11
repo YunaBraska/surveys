@@ -1,5 +1,6 @@
 package berlin.yuna.survey.logic;
 
+import berlin.yuna.survey.model.Route;
 import berlin.yuna.survey.model.plantuml.Identifier;
 import berlin.yuna.survey.model.types.QuestionGeneric;
 import net.sourceforge.plantuml.FileFormat;
@@ -45,6 +46,7 @@ public class SurveyDiagram {
 
     /**
      * Renders a diagram from a survey flow
+     *
      * @param output nullable target path - on default generates a tmp file
      * @param format format of generated diagram
      * @return file path of generated diagram
@@ -106,14 +108,14 @@ public class SurveyDiagram {
     }
 
 
-    private void addLeave(final Set<? extends QuestionGeneric.AnswerRoute<?>> routes) {
+    private void addLeave(final Set<? extends Route<?>> routes) {
         addLeave(start, routes);
         connectEnds();
     }
 
     private void addLeave(
             final ILeaf previous,
-            final Set<? extends QuestionGeneric.AnswerRoute<?>> routes
+            final Set<? extends Route<?>> routes
     ) {
         if (routes.isEmpty()) {
             ends.add(previous);

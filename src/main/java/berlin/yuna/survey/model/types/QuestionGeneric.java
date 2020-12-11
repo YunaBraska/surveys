@@ -2,9 +2,10 @@ package berlin.yuna.survey.model.types;
 
 import berlin.yuna.survey.model.Condition;
 import berlin.yuna.survey.model.HistoryItem;
+import berlin.yuna.survey.model.Route;
+import berlin.yuna.survey.model.exception.QuestionTypeException;
 
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -12,135 +13,93 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static berlin.yuna.survey.logic.QuestionHelper.searchInFlow;
-import static java.lang.String.format;
-import static java.util.Arrays.stream;
-import static java.util.Optional.ofNullable;
+import static berlin.yuna.survey.model.exception.QuestionNotFoundException.itemNotFound;
 
-@SuppressWarnings({"UnusedReturnValue"})
-//@SuppressWarnings({"unused", "UnusedReturnValue"})
+@SuppressWarnings({"unused", "UnusedReturnValue"})
 public abstract class QuestionGeneric<T, C extends QuestionGeneric<T, C>> implements Comparable<QuestionGeneric<?, ?>> {
 
     private final String label;
     private Consumer<T> onBack;
     private final Set<QuestionGeneric<?, ?>> parents = ConcurrentHashMap.newKeySet();
-    private final Set<AnswerRoute<T>> routes = ConcurrentHashMap.newKeySet();
+    private final Set<Route<T>> routes = ConcurrentHashMap.newKeySet();
     private static final Pattern SPECIAL_CHARS = Pattern.compile("^[A-Z_0-9]*$");
-    private static final Map<String, QuestionGeneric<?, ?>> all = new ConcurrentHashMap<>();
+
+    public QuestionGeneric(final String label) {
+        validateNewLabel(label);
+        this.label = label;
+    }
 
     /**
-     * Returns the specified {@link QuestionGeneric} which is the specified by this label
+     * Get a flow item by the given {@code enum}
      *
-     * @param label The label which is configured  for the specified {@code label}
-     * @return {@link QuestionGeneric} found by the {@code label} or {@code null} if there is no configuration for it
+     * @param label The {@code label} to search in flow
+     * @return Returns {@link Optional<QuestionGeneric>} or {@link Optional#empty()} when flow doesn't contain the
+     * requested item
      */
-    public static QuestionGeneric<?, ?> get(final Enum<?> label) {
-        return label == null ? null : get(label.name());
+    public Optional<QuestionGeneric<?, ?>> get(final Enum<?> label) {
+        return label == null ? Optional.empty() : get(label.name());
     }
 
     /**
-     * Returns the specified {@link QuestionGeneric} which is the specified by this label
+     * Get a flow item by the given {@code String}
      *
-     * @param label The label which is configured  for the specified {@code label}
-     * @return {@link QuestionGeneric} found by the {@code label} or {@code null} if there is no configuration for it
+     * @param label The {@code label} to search in flow
+     * @return Returns {@link Optional<QuestionGeneric>} or {@link Optional#empty()} when flow doesn't contain the
+     * requested item
      */
-    public static QuestionGeneric<?, ?> get(final String label) {
-        return label == null ? null : all.get(label);
+    public Optional<QuestionGeneric<?, ?>> get(final String label) {
+        return label == null ? Optional.empty() : find(label);
     }
 
     /**
-     * Returns the specified {@link QuestionGeneric} which is the specified by this label
+     * Get a flow item by the given {@link QuestionGeneric}
      *
-     * @param label    The label which is configured  for the specified {@code label}
-     * @param fallback if no question was found {@code label}
-     * @return {@link QuestionGeneric} found by the {@code label} or {@code null} if there is no configuration for it
+     * @param type {@link QuestionGeneric} to search in flow
+     * @return Returns {@link Optional<QuestionGeneric>} or {@link Optional#empty()} when flow doesn't contain the
+     * requested item
      */
-    public static QuestionGeneric<?, ?> getOrElse(final String label, final QuestionGeneric<?, ?> fallback) {
-        return label == null ? fallback : all.getOrDefault(label, fallback);
+    public <I extends QuestionGeneric<?, ?>> Optional<I> get(final I type) {
+        return label == null ? Optional.empty() : find(type);
     }
 
     /**
-     * Removes all of the configured mappings
-     */
-    public static void clearAll() {
-        all.clear();
-    }
-
-    /**
-     * @param label label to check for
-     * @return {@code true} if there is a configuration for the specified {@code label}
-     * {@link QuestionGeneric} exists
-     */
-    public static boolean exists(final Enum<?>... label) {
-        return exists(stream(label).map(Enum::name).toArray(String[]::new));
-    }
-
-    /**
-     * Checks if a question is linked in the question flow
+     * Get a flow item by this {@code String}
      *
-     * @param question {@link QuestionGeneric} to check if its contained in the flow
-     * @return true if the {@code question} is linked in current {@link QuestionGeneric} flow
+     * @param label    The {@code label} to search in flow
+     * @param fallback {@link QuestionGeneric} to return if the flow item wasn't found
+     * @return Returns {@link QuestionGeneric} or {@code fallback} when flow doesn't contain the
+     * requested item
      */
-    public boolean containsTarget(final QuestionGeneric<?, ?> question) {
-        return containsTarget(this, question);
+    public QuestionGeneric<?, ?> getOrElse(final String label, final QuestionGeneric<?, ?> fallback) {
+        return label == null ? fallback : get(label).orElse(fallback);
     }
 
     /**
-     * Checks if a question is linked in the question flow
+     * Get a flow item by this {@code enum}
      *
-     * @param flowStart {@link QuestionGeneric} of the flow start
-     * @param question  {@link QuestionGeneric} to check if its contained in the flow
-     * @return true if the {@code question} is linked in {@code flowStart}
+     * @param label    The {@code label} to search in flow
+     * @param fallback {@link QuestionGeneric} to return if the flow item wasn't found
+     * @return Returns {@link QuestionGeneric} or {@code fallback} when flow doesn't contain the
+     * requested item
      */
-    public static boolean containsTarget(final QuestionGeneric<?, ?> flowStart, final QuestionGeneric<?, ?> question) {
-        return containsTarget(flowStart, question, new HashSet<>());
+    public QuestionGeneric<?, ?> getOrElse(final Enum<?> label, final QuestionGeneric<?, ?> fallback) {
+        return label == null ? fallback : get(label).orElse(fallback);
     }
 
     /**
-     * Returns a set of parent {@link QuestionGeneric}
+     * Get a flow item by this {@code type}
      *
-     * @param question {@link QuestionGeneric} to find the parent of in the flow
-     * @return a set of parents - set will be empty if no parent was found
+     * @param type     The {@code label} to search in flow
+     * @param fallback {@link QuestionGeneric} to return if the flow item wasn't found
+     * @return Returns {@link QuestionGeneric} or {@code fallback} when flow doesn't contain the
+     * requested item
      */
-    public Set<QuestionGeneric<?, ?>> getParentsOf(final QuestionGeneric<?, ?> question) {
-        return getParentsOf(this, question);
-    }
-
-    /**
-     * Returns a set of parent {@link QuestionGeneric}
-     *
-     * @param flowStart {@link QuestionGeneric} of the flow start
-     * @param question  {@link QuestionGeneric} to find the parent of in the flow
-     * @return a set of parents - set will be empty if no parent was found
-     */
-    public static Set<QuestionGeneric<?, ?>> getParentsOf(final QuestionGeneric<?, ?> flowStart, final QuestionGeneric<?, ?> question) {
-        final Set<QuestionGeneric<?, ?>> result = new HashSet<>();
-        if (!flowStart.equals(question)) {
-            getParentsOf(flowStart, question, new HashSet<>(), result);
-        }
-        return result;
-    }
-
-    private static void getParentsOf(final QuestionGeneric<?, ?> current, final QuestionGeneric<?, ?> search, final Set<QuestionGeneric<?, ?>> checked, final Set<QuestionGeneric<?, ?>> result) {
-        if (current.targets().contains(search)) {
-            result.add(current);
-        } else if (!checked.contains(current)) {
-            checked.add(current);
-            current.targets().forEach(q -> getParentsOf(q, search, checked, result));
-        }
-    }
-
-    /**
-     * @param label label to check for
-     * @return {@code true} if there is a configuration for the specified {@code label}
-     * {@link QuestionGeneric} exists
-     */
-    public static boolean exists(final String... label) {
-        return all.keySet().containsAll(Set.of(label));
+    public <I extends QuestionGeneric<?, ?>> I getOrElse(final I type, I fallback) {
+        return type == null ? fallback : get(type).orElse(fallback);
     }
 
     /**
@@ -229,7 +188,7 @@ public abstract class QuestionGeneric<T, C extends QuestionGeneric<T, C>> implem
      * @return a set view of all configured {@code targets} for this {@link QuestionGeneric} object
      */
     public Set<QuestionGeneric<?, ?>> targets() {
-        return routes.stream().map(AnswerRoute::target).collect(Collectors.toSet());
+        return routes.stream().map(Route::target).collect(Collectors.toSet());
     }
 
     /**
@@ -280,13 +239,13 @@ public abstract class QuestionGeneric<T, C extends QuestionGeneric<T, C>> implem
      */
     public Optional<QuestionGeneric<?, ?>> answer(final T answer) {
         if (answer != null) {
-            for (AnswerRoute<T> route : routes) {
+            for (Route<T> route : routes) {
                 if (route.hasCondition() && route.apply(answer)) {
                     return Optional.of(route.target());
                 }
             }
         }
-        return getTargetWithoutCondition();
+        return routesWithoutCondition();
     }
 
     /**
@@ -330,58 +289,18 @@ public abstract class QuestionGeneric<T, C extends QuestionGeneric<T, C>> implem
         return (C) this;
     }
 
-    public Set<AnswerRoute<T>> routes() {
+    /**
+     * @return a copy of configured routes
+     */
+    public Set<Route<T>> routes() {
         return new HashSet<>(routes);
     }
-//
-//    @SuppressWarnings("unchecked")
-//    public C routes(final Set<AnswerRoute<T>> answerRoutes) {
-//        routes.clear();
-//        this.routes.addAll(answerRoutes);
-//        return (C) this;
-//    }
 
-    protected QuestionGeneric(final String label) {
-        validateNewLabel(label);
-        this.label = label;
-        all.put(label, this);
-    }
-
-    protected static <K> K getOrNew(
-            final String label,
-            final Class<K> type,
-            final Supplier<K> instance
-    ) {
-        QuestionGeneric<?, ?> result = all.get(label);
-        if (label == null) {
-            return null;
-        } else if (result == null) {
-            return instance.get();
-        } else if (result.getClass() == type) {
-            return type.cast(result);
-        } else {
-            throw new IllegalStateException(format(
-                    "Found question [%s] with different type [%s] than requested [%s]",
-                    label,
-                    ofNullable(get(label)).map(c -> c.getClass().getSimpleName()).orElse(null),
-                    type.getSimpleName()
-            ));
-        }
-    }
-
-    private static boolean containsTarget(final QuestionGeneric<?, ?> current, final QuestionGeneric<?, ?> search, final Set<QuestionGeneric<?, ?>> checked) {
-        if (search.equals(current)) {
-            return true;
-        } else if (!checked.contains(current)) {
-            checked.add(current);
-            return current.targets().stream().anyMatch(q -> containsTarget(q, search, checked));
-        } else {
-            return false;
-        }
-    }
-
-    private Optional<QuestionGeneric<?, ?>> getTargetWithoutCondition() {
-        return routes.stream().filter(AnswerRoute::hasNoCondition).findFirst().map(AnswerRoute::target);
+    /**
+     * @return the route without condition id configured else empty
+     */
+    private Optional<QuestionGeneric<?, ?>> routesWithoutCondition() {
+        return routes.stream().filter(Route::hasNoCondition).findFirst().map(Route::target);
     }
 
     private static void validateNewLabel(final String label) {
@@ -391,73 +310,78 @@ public abstract class QuestionGeneric<T, C extends QuestionGeneric<T, C>> implem
     }
 
     @SuppressWarnings({"unchecked"})
+    protected void addTarget(final Route<?> route) {
+        routes.add((Route<T>) route);
+    }
+
+    protected void addParent(final QuestionGeneric<?, ?> parent) {
+        parents.add(parent);
+    }
+
+    private void removeTargets(final Predicate<Route<T>> filter) {
+        final Set<Route<T>> connections = routes.stream().filter(filter).collect(Collectors.toSet());
+        connections.forEach(route -> route.target().parents.remove(this));
+        routes.removeAll(connections);
+    }
+
+    private Optional<QuestionGeneric<?, ?>> find(final String search) {
+        return find(this, search, new HashSet<>(), true, true);
+    }
+
+    // LOGIC
+
     private <I extends QuestionGeneric<?, ?>> I targetGet(final I target, final Condition<T> condition, final Function<T, Boolean> function) {
         if (target == null) {
-            throw new IllegalArgumentException("Invalid target [null]");
+            throw itemNotFound(null, label);
         }
 
-        final I flowTarget = (I) searchInFlow(target, this).orElse(target);
+        final I flowTarget = find(target).orElse(target);
         if (condition == null && function == null) {
-            removeTargets(AnswerRoute::hasNoCondition);
+            removeTargets(Route::hasNoCondition);
         }
 
         //merge
         target.routes().forEach(flowTarget::addTarget);
         target.parents().forEach(flowTarget::addParent);
-//        flowTarget.routes.addAll(target.routes);
-//        flowTarget.parents.addAll(target.parents);
 
         //add route to patent and child
-        routes.add(new AnswerRoute<>(flowTarget, function, condition));
+        routes.add(new Route<>(flowTarget, function, condition));
         flowTarget.addParent(this);
         return flowTarget;
     }
 
-    @SuppressWarnings({"unchecked"})
-    protected void addTarget(final AnswerRoute<?> route){
-        routes.add((AnswerRoute<T>) route);
+    @SuppressWarnings("unchecked")
+    private <I extends QuestionGeneric<?, ?>> Optional<I> find(final I search) {
+        Optional<QuestionGeneric<?, ?>> result = find(search.label());
+        assertSameType(result.orElse(null), search);
+        return result.isEmpty() ? Optional.empty() : Optional.of((I) result.get());
     }
 
-    protected void addParent(final QuestionGeneric<?, ?> parent){
-        parents.add(parent);
+    private Optional<QuestionGeneric<?, ?>> find(
+            final QuestionGeneric<?, ?> current,
+            final String search,
+            final HashSet<String> checked,
+            final boolean parents,
+            final boolean targets
+    ) {
+        if (current.label().equals(search)) {
+            return Optional.of(current);
+        } else if (!checked.contains(current.label())) {
+            checked.add(current.label());
+            return Stream.concat(
+                    targets ? current.routes.stream().map(Route::target) : Stream.empty(),
+                    parents ? current.parents.stream() : Stream.empty()
+            ).flatMap(q -> find(q, search, checked, parents, targets).stream()).findFirst();
+        } else {
+            return Optional.empty();
+        }
     }
 
-    private void removeTargets(final Predicate<AnswerRoute<T>> filter) {
-        final Set<AnswerRoute<T>> connections = routes.stream().filter(filter).collect(Collectors.toSet());
-        connections.forEach(route -> route.target.parents.remove(this));
-        routes.removeAll(connections);
+    private void assertSameType(final QuestionGeneric<?,?> original, final QuestionGeneric<?,?> invalid) {
+        if (original != null && original.getClass() != invalid.getClass()) {
+            throw new QuestionTypeException(label, original, invalid);
+        }
     }
-
-//
-//    private Optional<QuestionGeneric<?, ?>> getParent(final String search) {
-//        return getParent(this, search, new HashSet<>());
-//    }
-//
-//    private Optional<QuestionGeneric<?, ?>> getParent(final QuestionGeneric<?, ?> current, final String search, final HashSet<String> checked) {
-//        if (current.label.equals(search)) {
-//            return Optional.of(current);
-//        } else if (!checked.contains(current.label)) {
-//            checked.add(current.label);
-//            return current.parents.stream().flatMap(q -> getParent(q, search, checked).stream()).findFirst();
-//        } else {
-//            return Optional.empty();
-//        }
-//    }
-//
-//    private Optional<QuestionGeneric<?, ?>> getTarget(final String search) {
-//        return getTarget(this, search, new HashSet<>());
-//    }
-//
-//    private Optional<QuestionGeneric<?, ?>> getTarget(final QuestionGeneric<?, ?> current, final String search, final HashSet<String> checked) {
-//        if (current.label.equals(search)) {
-//            return Optional.of(current);
-//        } else if (!checked.contains(current.label)) {
-//            checked.add(current.label);
-//            return current.routes.stream().map(AnswerRoute::target).flatMap(q -> getTarget(q, search, checked).stream()).findFirst();
-//        } else {
-//            return Optional.empty();
-//        }
-//    }
 
     @Override
     public boolean equals(Object o) {
@@ -486,72 +410,4 @@ public abstract class QuestionGeneric<T, C extends QuestionGeneric<T, C>> implem
         return String.CASE_INSENSITIVE_ORDER.compare(o.label, label);
     }
 
-    public static class AnswerRoute<T> {
-        private final QuestionGeneric<?, ?> target;
-        private final Function<T, Boolean> function;
-        private final Condition<T> condition;
-
-        public AnswerRoute(final QuestionGeneric<?, ?> target, final Function<T, Boolean> function, final Condition<T> condition) {
-            this.target = target;
-            this.condition = condition;
-            this.function = function;
-        }
-
-        public boolean apply(T answer) {
-            return (hasChoice() && condition.apply(answer)) || (hasFunction() && function.apply(answer));
-        }
-
-        public boolean hasChoice() {
-            return condition != null;
-        }
-
-        public boolean hasFunction() {
-            return function != null;
-        }
-
-        public boolean hasCondition() {
-            return hasChoice() || hasFunction();
-        }
-
-        public boolean hasNoCondition() {
-            return !hasCondition();
-        }
-
-        public String getLabel() {
-            return hasChoice() ? (condition.getLabel() != null ? condition.getLabel() : condition.getClass().getSimpleName()) : null;
-        }
-
-        public QuestionGeneric<?, ?> target() {
-            return target;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            AnswerRoute<?> that = (AnswerRoute<?>) o;
-
-            if (!Objects.equals(target, that.target)) return false;
-            if (!Objects.equals(function, that.function)) return false;
-            return Objects.equals(condition, that.condition);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = target != null ? target.hashCode() : 0;
-            result = 31 * result + (function != null ? function.hashCode() : 0);
-            result = 31 * result + (condition != null ? condition.hashCode() : 0);
-            return result;
-        }
-
-        @Override
-        public String toString() {
-            return "AnswerRoute{" +
-                    "target=" + target +
-                    ", function=" + function +
-                    ", choice=" + getLabel() +
-                    '}';
-        }
-    }
 }

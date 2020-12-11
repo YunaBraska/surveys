@@ -47,7 +47,7 @@ public class QuestionList extends QuestionGeneric<Collection<String>, QuestionLi
     }
 
     public static QuestionList of(final String label) {
-        return getOrNew(label, QuestionList.class, () -> new QuestionList(label));
+        return new QuestionList(label);
     }
 
     private QuestionList(String label) {

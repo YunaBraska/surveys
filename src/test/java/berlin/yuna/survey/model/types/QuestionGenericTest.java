@@ -2,10 +2,12 @@ package berlin.yuna.survey.model.types;
 
 
 import berlin.yuna.survey.model.HistoryItem;
+import berlin.yuna.survey.model.Route;
+import berlin.yuna.survey.model.exception.QuestionNotFoundException;
+import berlin.yuna.survey.model.exception.QuestionTypeException;
 import berlin.yuna.survey.model.types.simple.Question;
 import berlin.yuna.survey.model.types.simple.QuestionBool;
 import berlin.yuna.survey.model.types.simple.QuestionInt;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -18,10 +20,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItems;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag("UnitTest")
@@ -37,70 +37,52 @@ class QuestionGenericTest {
         Q1, Q2, Q3, Q4, Q5
     }
 
-    @BeforeEach
-    void setUp() {
-        Question.clearAll();
-    }
-
-    @Test
-    void circularlyTest() {
-        new QuestionBool(Q1).target(Question.of(Q3)).targetGet(Question.of(Q2)).target(new QuestionInt(Q1));
-    }
-
-    @Test
-    @DisplayName("Delete cache, routes and config")
-    void deleteCacheAndRouted() {
-        assertThat(Question.of(Q1), is(equalTo(Question.get(Q.Q1))));
-        Question.clearAll();
-        assertThat(Question.get(Q1), is(nullValue()));
-    }
-
-    @Test
-    @DisplayName("Exists")
-    void checkIfQuestionExists() {
-        assertThat(Question.exists(Q1), is(false));
-        Question.of(Q1);
-        assertThat(Question.exists(Q1), is(true));
-        assertThat(Question.exists(Q.Q1), is(true));
-    }
-
     @Test
     @DisplayName("Set target and get")
     void targetGetShouldReturnInput() {
-        assertThat(Question.of(Q1).target(Question.of(Q2)).label(), is(equalTo(Q1)));
-        assertThat(Question.of(Q1).targetGet(Question.of(Q2)).label(), is(equalTo(Q2)));
-        assertThat(Question.of(Q1).routes().iterator().next().target(), is(equalTo(Question.of(Q2))));
+        final Question flow = Question.of(Q1);
+        assertThat(flow.target(Question.of(Q2)).label(), is(equalTo(Q1)));
+        assertThat(flow.targetGet(Question.of(Q2)).label(), is(equalTo(Q2)));
+        assertThat(flow.routes().iterator().next().target(), is(equalTo(Question.of(Q2))));
+
+        assertThrows(QuestionNotFoundException.class, () -> flow.targetGet(null));
     }
 
     @Test
     @DisplayName("Set target and get with choice [COV]")
     void targetGetWithChoiceShouldReturnInput() {
-        Question.of(Q1).targetGet(Question.of(Q2), new CustomCondition());
-        Question.of(Q3).target(Question.of(Q4), new CustomCondition());
-        assertThat(Question.of(Q1).targets().iterator().next(), is(Question.of(Q2)));
-        assertThat(Question.of(Q3).targets().iterator().next(), is(Question.of(Q4)));
+        final Question flow = Question.of(Q1).target(Question.of(Q2), new CustomCondition());
+        final Question flow2 = Question.of(Q3).target(Question.of(Q4), new CustomCondition());
+        assertThat(flow.targets().iterator().next(), is(Question.of(Q2)));
+        assertThat(flow2.targets().iterator().next(), is(Question.of(Q4)));
     }
 
     @Test
     @DisplayName("Get targets")
     void shouldReturnConfiguredTargets() {
-        Question.of(Q1).target(Question.of(Q2)).target(Question.of(Q3), a -> a.equalsIgnoreCase("fail"));
-        Question.of(Q2).target(Question.of(Q4)).target(Question.of(Q5), a -> a.equalsIgnoreCase("ok"));
+        final Question subFlow = Question.of(Q2).target(Question.of(Q4)).target(Question.of(Q5), a -> a.equalsIgnoreCase("ok"));
+        final Question flow = Question.of(Q1).target(subFlow).target(Question.of(Q3), a -> a.equalsIgnoreCase("fail"));
 
-        Set<QuestionGeneric<?, ?>> targets = Question.get(Q1).targets();
-        assertThat(targets, hasItems(Question.get(Q2), Question.get(Q3)));
-        assertThat(targets, not(hasItems(Question.get(Q1), Question.get(Q4), Question.get(Q5))));
+        Set<QuestionGeneric<?, ?>> targets = flow.targets();
+        assertThat(targets, hasItems(Question.of(Q2), Question.of(Q3)));
+        assertThat(targets, not(hasItems(Question.of(Q1), Question.of(Q4), Question.of(Q5))));
     }
 
     @Test
     @DisplayName("Only one target with nullable condition allowed")
     void onlyOneTargetWithNullableConfigIsAllowed() {
-        Question.of(Q1).target(QuestionBool.of(Q2));
-        Question.of(Q1).target(QuestionInt.of(Q3));
+        final Question flow = Question.of(Q1);
+        final QuestionBool q2 = QuestionBool.of(Q2);
+        final QuestionInt q3 = QuestionInt.of(Q3);
 
-        Set<QuestionGeneric<?, ?>> targets = Question.get(Q1).targets();
-        assertThat(targets, not(hasItems(Question.get(Q2))));
-        assertThat(targets, hasItems(Question.get(Q3)));
+        flow.target(q2);
+        assertThat(q2.parents(), hasItems(flow));
+        flow.target(q3);
+        assertThat(q2.parents(), not(hasItems(flow)));
+
+        Set<QuestionGeneric<?, ?>> targets = flow.targets();
+        assertThat(targets, not(hasItems(q2)));
+        assertThat(targets, hasItems(q3));
     }
 
     @Test
@@ -137,17 +119,6 @@ class QuestionGenericTest {
     }
 
     @Test
-    @DisplayName("Throws an exception on already existing label with different type")
-    void creatingQuestionTwice_WithDifferentTypes_throwsException() {
-        QuestionInt.of(Q1);
-        assertThrows(
-                IllegalStateException.class,
-                () -> QuestionBool.of(Q1),
-                "Found question [Q1] with different type [QuestionBool] than requested [QuestionInt]"
-        );
-    }
-
-    @Test
     @DisplayName("Fail on creating with special chars")
     void creatingWithSpecialCharsInLabel_shouldFail() {
         assertThrows(IllegalArgumentException.class, () -> Question.of("My new invalid Question"));
@@ -163,22 +134,6 @@ class QuestionGenericTest {
     }
 
     @Test
-    @DisplayName("Contains target")
-    void isLinkedInFlow() {
-        Question.of(Q1).targetGet(Question.of(Q2)).targetGet(Question.of(Q3)).targetGet(Question.of(Q4));
-        assertThat(Question.of(Q1).containsTarget(Question.of(Q3)), is(true));
-        assertThat(Question.of(Q1).containsTarget(Question.of(Q5)), is(false));
-    }
-
-    @Test
-    @DisplayName("Get parent from flow member")
-    void getParentFromFlow() {
-        Question.of(Q1).targetGet(Question.of(Q2)).targetGet(Question.of(Q3)).targetGet(Question.of(Q4));
-        assertThat(Question.of(Q1).getParentsOf(Question.of(Q3)), hasSize(1));
-        assertThat(Question.of(Q1).getParentsOf(Question.of(Q3)).iterator().next(), is(Question.of(Q2)));
-    }
-
-    @Test
     @DisplayName("match SurveyAnswer")
     void match() {
         assertThat(Question.of(Q1).match(new HistoryItem("Q1", null, true, false)), is(true));
@@ -189,10 +144,11 @@ class QuestionGenericTest {
     @DisplayName("on back should trigger function")
     void onBack() {
         final AtomicBoolean isBackTriggered = new AtomicBoolean(false);
-        Question.of(Q1).onBack(answer -> isBackTriggered.set(true));
+        final Question flow = Question.of(Q1);
+        flow.onBack(answer -> isBackTriggered.set(true));
         assertThat(isBackTriggered.get(), is(false));
 
-        Question.of(Q1).onBack("this triggers on back");
+        flow.onBack("this triggers on back");
         assertThat(isBackTriggered.get(), is(true));
     }
 
@@ -200,11 +156,38 @@ class QuestionGenericTest {
     @DisplayName("AnswerRoute [COV]")
     void checkAnswerRoute() {
         final CustomCondition customChoice = new CustomCondition();
-        QuestionGeneric.AnswerRoute<String> route = new QuestionGeneric.AnswerRoute<>(Question.of(Q1), null, customChoice);
+        Route<String> route = new Route<>(Question.of(Q1), null, customChoice);
         assertThat(route.target(), is(Question.of(Q1)));
         assertThat(route.getLabel(), is(customChoice.getLabel()));
-        assertThat(route.equals(new QuestionGeneric.AnswerRoute<>(Question.of(Q1), null, customChoice)), is(true));
+        assertThat(route.equals(new Route<>(Question.of(Q1), null, customChoice)), is(true));
         assertThat(route.toString(), is(containsString("AnswerRoute{target=Question{label='Q1'}")));
+    }
+
+    @Test
+    @DisplayName("Get by enum, string and type [COV]")
+    void Get() {
+        final Question q2 = Question.of(Q2);
+        final Question flow = Question.of(Q1).target(q2.target(Question.of(Q3)));
+        //By String
+        String qString = null;
+        assertThat(flow.get(Q1).get().targets(), hasItems(q2));
+        assertThat(flow.getOrElse(Q2, Question.of(Q3)), is(q2));
+        assertThat(flow.getOrElse(Q5, q2), is(q2));
+        assertThat(flow.getOrElse(qString, q2), is(q2));
+        //By Enum
+        Enum qEnum = null;
+        assertThat(flow.get(Q.Q1).get().targets(), hasItems(q2));
+        assertThat(flow.getOrElse(Q.Q2, Question.of(Q3)), is(q2));
+        assertThat(flow.getOrElse(Q.Q5, q2), is(q2));
+        assertThat(flow.getOrElse(qEnum, q2), is(q2));
+        //By Type
+        Question qType = null;
+        assertThat(flow.get(Question.of(Q1)).get().targets(), hasItems(q2));
+        assertThat(flow.getOrElse(Question.of(Q2), Question.of(Q3)), is(q2));
+        assertThat(flow.getOrElse(Question.of(Q5), q2), is(q2));
+        assertThat(flow.getOrElse(qType, q2), is(q2));
+        //By wrong type
+        assertThrows(QuestionTypeException.class, () -> flow.get(QuestionBool.of(Q2)));
     }
 
     @Test

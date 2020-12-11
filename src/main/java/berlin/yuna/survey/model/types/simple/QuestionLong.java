@@ -24,7 +24,7 @@ public class QuestionLong extends QuestionGeneric<Long, QuestionLong> {
     }
 
     public static QuestionLong of(final String label) {
-        return getOrNew(label, QuestionLong.class, () -> new QuestionLong(label));
+        return new QuestionLong(label);
     }
 
     private QuestionLong(String label) {

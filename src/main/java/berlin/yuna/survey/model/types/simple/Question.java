@@ -17,7 +17,7 @@ public class Question extends QuestionGeneric<String, Question> {
     }
 
     public static Question of(final String label) {
-        return getOrNew(label, Question.class, () -> new Question(label));
+        return new Question(label);
     }
 
     private Question(String label) {

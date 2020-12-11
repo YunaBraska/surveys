@@ -26,9 +26,12 @@ else
   echo "No git changes to push"
 fi
 # CREATE TAG
-TAG_A=$(git describe --tag --always --abbrev=0)
-./mvnw compile -q -DpushChanges=false -P tag $ >/dev/null || true
-if [ "${TAG_A}" == "$(git describe --tag --always --abbrev=0)" ]; then
+TAG_OLD=$(git describe --tag --always --abbrev=0)
+VERSION=$(./mvnw -q -Dexec.executable=echo -Dexec.args="\${project.version}" --non-recursive exec:exec)
+./mvnw compile -q -DpushChanges=false -P tag &>/dev/null || true
+git tag "${VERSION}" $ &>/dev/null || true
+TAG_NEW=$(git describe --tag --always --abbrev=0)
+if [ "${TAG_OLD}" == "${TAG_NEW}" ] && [ "${TAG_NEW}" == "${VERSION}" ]; then
   echo "Tag already exists"
 else
   echo "New tag created"
