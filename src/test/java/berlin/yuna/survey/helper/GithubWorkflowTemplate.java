@@ -21,7 +21,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 
 @Tag("UnitTest")
-public class GithubWorkflowTemplate {
+class GithubWorkflowTemplate {
 
     private final Map<String, String> variables = new HashMap<>();
 
