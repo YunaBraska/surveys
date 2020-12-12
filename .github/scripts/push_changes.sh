@@ -21,22 +21,23 @@ if [[ $(git status --porcelain) ]]; then
   echo "Pushing new git changes"
   git add .
   git commit -am "Updated dependencies"
-  git push origin
+  git push origin -f
 else
   echo "No git changes to push"
 fi
 # CREATE TAG
+#git pull --tags || true
 TAG_OLD=$(git describe --tag --always --abbrev=0)
 VERSION=$(./mvnw -q -Dexec.executable=echo -Dexec.args="\${project.version}" --non-recursive exec:exec)
-./mvnw compile -q -DpushChanges=false -P tag &>/dev/null || true
-git tag "${VERSION}" $ &>/dev/null || true
+git tag "${VERSION}" &>/dev/null || true
 TAG_NEW=$(git describe --tag --always --abbrev=0)
+echo "TAG_OLD [${TAG_OLD}] <> TAG_NEW [${TAG_NEW}] && TAG_NEW [${TAG_NEW}] <> VERSION [${VERSION}]"
 if [ "${TAG_OLD}" == "${TAG_NEW}" ] && [ "${TAG_NEW}" == "${VERSION}" ]; then
   echo "Tag already exists"
 else
-  echo "New tag created"
+  echo "New tag created ${TAG_NEW}"
   git branch "release" &>/dev/null || true
   # new branch as trigger for new release
-  git push origin --all -u || true
-  git push origin --tags || true
+  git push origin --all -u -f || true
+  git push origin --tags -f || true
 fi
