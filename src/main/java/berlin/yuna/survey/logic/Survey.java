@@ -22,6 +22,7 @@ import java.util.stream.StreamSupport;
 import static berlin.yuna.survey.model.exception.QuestionNotFoundException.itemNotFound;
 import static berlin.yuna.survey.model.exception.QuestionNotFoundException.itemNotFoundInHistory;
 
+@SuppressWarnings({"unused", "UnusedReturnValue"})
 public class Survey {
 
     private QuestionGeneric<?, ?> last;

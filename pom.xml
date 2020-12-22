@@ -42,6 +42,7 @@
         <project.reporting.outputEncoding>${project.encoding}</project.reporting.outputEncoding>
         <!-- VERSIONS -->
         <hamcrest-core.version>2.2</hamcrest-core.version>
+        <graphviz-java.version>0.18.0</graphviz-java.version>
         <jackson-databind.version>2.12.0</jackson-databind.version>
         <junit-jupiter-api.version>5.7.0</junit-jupiter-api.version>
         <!-- VERSIONS BUILD -->
@@ -62,9 +63,9 @@
     <dependencies>
         <!-- DIAGRAM GENERATOR -->
         <dependency>
-            <groupId>net.sourceforge.plantuml</groupId>
-            <artifactId>plantuml</artifactId>
-            <version>1.2020.20</version>
+            <groupId>guru.nidi</groupId>
+            <artifactId>graphviz-java</artifactId>
+            <version>${graphviz-java.version}</version>
         </dependency>
 
         <!-- JSON PROCESSOR -->

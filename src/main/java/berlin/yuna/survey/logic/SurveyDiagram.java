@@ -1,47 +1,59 @@
 package berlin.yuna.survey.logic;
 
+import berlin.yuna.survey.model.HistoryItem;
 import berlin.yuna.survey.model.Route;
-import berlin.yuna.survey.model.plantuml.Identifier;
 import berlin.yuna.survey.model.types.QuestionGeneric;
-import net.sourceforge.plantuml.FileFormat;
-import net.sourceforge.plantuml.FileFormatOption;
-import net.sourceforge.plantuml.SkinParam;
-import net.sourceforge.plantuml.UmlDiagramType;
-import net.sourceforge.plantuml.activitydiagram.ActivityDiagram;
-import net.sourceforge.plantuml.activitydiagram.ActivityDiagramFactory;
-import net.sourceforge.plantuml.cucadiagram.Display;
-import net.sourceforge.plantuml.cucadiagram.DisplayPositionned;
-import net.sourceforge.plantuml.cucadiagram.ILeaf;
-import net.sourceforge.plantuml.cucadiagram.Ident;
-import net.sourceforge.plantuml.cucadiagram.LeafType;
-import net.sourceforge.plantuml.cucadiagram.Link;
-import net.sourceforge.plantuml.cucadiagram.LinkDecor;
-import net.sourceforge.plantuml.cucadiagram.LinkType;
-import net.sourceforge.plantuml.graphic.HorizontalAlignment;
-import net.sourceforge.plantuml.graphic.VerticalAlignment;
-import net.sourceforge.plantuml.style.StyleBuilder;
+import guru.nidi.graphviz.attribute.Color;
+import guru.nidi.graphviz.attribute.Label;
+import guru.nidi.graphviz.attribute.Rank;
+import guru.nidi.graphviz.attribute.Shape;
+import guru.nidi.graphviz.engine.Format;
+import guru.nidi.graphviz.engine.Graphviz;
+import guru.nidi.graphviz.model.Link;
+import guru.nidi.graphviz.model.MutableNode;
 
-import java.awt.IllegalComponentStateException;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.rmi.UnexpectedException;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
+import static guru.nidi.graphviz.model.Factory.graph;
+import static guru.nidi.graphviz.model.Factory.mutNode;
+import static guru.nidi.graphviz.model.Link.to;
+
+@SuppressWarnings({"unused", "UnusedReturnValue"})
 public class SurveyDiagram {
 
-    final Set<String> links = new HashSet<>();
-    final Set<ILeaf> ends = new HashSet<>();
-    //http://plantuml.com/guide
-    final ActivityDiagram diagram = new ActivityDiagramFactory(null).createEmptyDiagram();
-    final ILeaf start = createLeaf(LeafType.CIRCLE_START, "start");
-    final StyleBuilder style = new StyleBuilder(SkinParam.create(UmlDiagramType.ACTIVITY));
+    //CONFIGS
+    private Color colorDraft = Color.BLUE;
+    private Color colorDefault = Color.BLACK;
+    private Color colorAnswered = Color.GREEN;
+    private Color colorCurrent = Color.ORANGE;
+    private Shape shapeChoice = Shape.OVAL;
+    private Shape shapeDefault = Shape.RECTANGLE;
+    private Rank.RankDir direction = Rank.RankDir.LEFT_TO_RIGHT;
+    private int width = -1;
+    private int height = -1;
 
-    //FIXME: unused move to static render method
+    //TMP used for rendering
+    private final Survey survey;
+    private final Set<String> links = new HashSet<>();
+    private final Map<String, MutableNode> nodes = new HashMap<>();
+
     public SurveyDiagram(final Survey survey) {
-        start.setTop(true);
-        addLeave(survey.getFirst().routes());
+        this.survey = survey;
+    }
+
+    /**
+     * Renders a diagram from a survey flow
+     *
+     * @param format format of generated diagram
+     * @return file path of generated diagram
+     */
+    public File render(final Format format) throws IOException {
+        return render(null, format);
     }
 
     /**
@@ -50,133 +62,146 @@ public class SurveyDiagram {
      * @param output nullable target path - on default generates a tmp file
      * @param format format of generated diagram
      * @return file path of generated diagram
-     * @throws IOException on unexpected save file issues
      */
-    //FIXME: method with own unchecked exception for easier usage
-    public File render(final File output, final FileFormat format) throws IOException {
-        switch (format) {
-            case PDF:
-            case HTML:
-            case MJPEG:
-            case ANIMATED_GIF:
-                if (!hasSVGConverter()) {
-                    throw new IllegalComponentStateException("Missing dependencies see (https://plantuml.com/pdf)");
-                }
-                break;
-            case HTML5:
-            case BASE64:
-                throw new IllegalComponentStateException("Missing dependency [zxing:core/2.2] see (https://stackoverflow.com/questions/19755569/error-while-converting-text-to-qr-code)");
-            case SCXML:
-            case PREPROC:
-            case XMI_ARGO:
-            case XMI_STAR:
-            case XMI_STANDARD:
-                throw new UnsupportedOperationException("Unsupported format [" + format + "] please contact plantuml to provide updates (https://github.com/plantuml/plantuml)");
-            default:
-                try (FileOutputStream os = new FileOutputStream(output, false)) {
-                    //TODO: TITLE && DESCRIPTION
-                    diagram.setTitle(DisplayPositionned.none(HorizontalAlignment.CENTER, VerticalAlignment.TOP));
-                    diagram.exportDiagram(os, 0, new FileFormatOption(format, true));
-                    if (diagram.getWarningOrError() != null && diagram.getWarningOrError().trim().length() > 1) {
-                        System.err.println(diagram.getWarningOrError());
-                    }
-                } catch (IOException e) {
-                    throw e;
-                } catch (Exception e) {
-                    throw new UnexpectedException("Something unexpected happened. First check if you have all required system libraries like 'graphviz' else read Exception", e);
-                }
-        }
-        return output;
+    public File render(final File output, final Format format) throws IOException {
+        final File result = getFile(output, format);
+        final Graphviz graph = Graphviz.fromGraph(graph().directed().with(createLeaves()).graphAttr().with(Rank.dir(direction)));
+        graph.width(width < 1 ? (links.size() +1) * 100 : width).height(height < 1 ? -1 : height).render(format).toFile(result);
+        return result;
     }
 
-    public static File render(final Survey survey, final FileFormat format) throws IOException {
-        return render(survey, null, format);
+    public SurveyDiagram colorDefault(final Color colorDefault) {
+        this.colorDefault = colorDefault;
+        return this;
     }
 
-    public static File render(final Survey survey, final File output, final FileFormat format) throws IOException {
-        return new SurveyDiagram(survey).render(getFile(output, format), format);
+    public SurveyDiagram colorAnswered(final Color colorAnswered) {
+        this.colorAnswered = colorAnswered;
+        return this;
     }
 
-    private static File getFile(final File output, final FileFormat format) throws IOException {
+    public SurveyDiagram colorDraft(final Color colorDraft) {
+        this.colorDraft = colorDraft;
+        return this;
+    }
+
+    public SurveyDiagram colorCurrent(final Color colorCurrent) {
+        this.colorCurrent = colorCurrent;
+        return this;
+    }
+
+    public SurveyDiagram direction(final Rank.RankDir direction) {
+        this.direction = direction;
+        return this;
+    }
+
+    public SurveyDiagram shapeChoice(Shape shapeChoice) {
+        this.shapeChoice = shapeChoice;
+        return this;
+    }
+
+    public SurveyDiagram shapeDefault(Shape shapeDefault) {
+        this.shapeDefault = shapeDefault;
+        return this;
+    }
+
+    public SurveyDiagram width(int width) {
+        this.width = width;
+        return this;
+    }
+
+    public SurveyDiagram height(int height) {
+        this.height = height;
+        return this;
+    }
+
+    private static File getFile(final File output, final Format format) throws IOException {
         if (format == null) {
-            throw new IllegalArgumentException(FileFormat.class.getSimpleName() + " can not be null");
+            throw new IllegalArgumentException(Format.class.getSimpleName() + " can not be null");
         }
         if (output == null) {
-            return File.createTempFile("diagram_" + format.toString().toLowerCase() + "_", format.getFileSuffix());
+            return File.createTempFile("diagram_" + format.toString().toLowerCase() + "_", "." + format.fileExtension);
         }
         return output;
     }
 
-
-    private void addLeave(final Set<? extends Route<?>> routes) {
-        addLeave(start, routes);
-        connectEnds();
+    private MutableNode createLeaves() {
+        links.clear();
+        nodes.clear();
+        final QuestionGeneric<?, ?> first = survey.getFirst();
+        addLeave(getNode(shapeDefault, first.label()), first.routes());
+        return getNode(shapeDefault, first.label());
     }
 
-    private void addLeave(
-            final ILeaf previous,
-            final Set<? extends Route<?>> routes
-    ) {
-        if (routes.isEmpty()) {
-            ends.add(previous);
-        }
+    private void addLeave(final MutableNode previous, final Set<? extends Route<?>> routes) {
         routes.forEach(route -> {
             final QuestionGeneric<?, ?> question = route.target();
-            //CREATE LEAF
-            ILeaf current = createLeaf(LeafType.ACTIVITY, question.label());
+            final MutableNode current = getNode(shapeDefault, question.label());
             //STOP ENDLESS CIRCULATION
             if (link(previous, current, route.getLabel())) {
                 //CHOICE
-                if (question.targets().size() > 1) {
-                    ILeaf option = createLeaf(LeafType.BRANCH, question.label() + "_CHOICE");
+                if (shapeChoice != Shape.NONE && question.targets().size() > 1) {
+                    final String id = survey.getHistory().stream().filter(item -> !survey.get().match(item)).filter(item -> question.targets().stream().anyMatch(item::match)).findFirst().map(HistoryItem::getLabel).orElse(question.label() + "_CHOICE");
+                    MutableNode option = getNode(shapeChoice, question.label() + "_CHOICE", id);
                     link(current, option, null);
-                    current = option;
+                    addLeave(option, question.routes());
+                } else {
+                    addLeave(current, question.routes());
                 }
-                addLeave(current, question.routes());
             }
         });
     }
 
-    private ILeaf createLeaf(final LeafType type, final String label) {
-        final ILeaf leaf = diagram.getOrCreateLeaf(
-                Ident.empty().add(label, null),
-                new Identifier(label),
-                type,
-                null
-        );
-        leaf.setDisplay(Display.create(label));
-        return leaf;
+    private Color getColor(final String label) {
+        return survey.getHistory().stream()
+                .filter(item -> item.getLabel().equals(label))
+                .findFirst()
+                .map(item -> {
+                    if (item.match(survey.get())) {
+                        return colorCurrent;
+                    } else if (item.isDraft()) {
+                        return colorDraft;
+                    } else if (item.isAnswered()) {
+                        return colorAnswered;
+                    } else {
+                        return colorDefault;
+                    }
+                }).orElse(colorDefault);
     }
 
-    private boolean link(final ILeaf first, final ILeaf second, final String label) {
-        final String id = first.getCode().getName() + " -> " + second.getCode().getName();
+    private boolean link(final MutableNode first, final MutableNode second, final String label) {
+        final String id = first.name().value() + " -> " + second.name().value();
         if (!links.contains(id)) {
-            final Link link = new Link(
-                    first,
-                    second,
-                    new LinkType(LinkDecor.ARROW, LinkDecor.NONE),
-                    label == null ? null : Display.create(label),
-                    5,
-                    style
-            );
-            diagram.addLink(link);
+            final Link link = to(second)
+                    .with(getLinkColor(first, second))
+                    .with(Label.of(label == null ? "" : label));
+            first.addLink(link);
             links.add(id);
             return true;
         }
         return false;
     }
 
-    private void connectEnds() {
-        final ILeaf end = createLeaf(LeafType.CIRCLE_END, "end");
-        ends.forEach(iLeaf -> link(iLeaf, end, null));
+    private Color getLinkColor(final MutableNode first, final MutableNode second) {
+        final Color c1 = Color.named(String.valueOf(first.attrs().get("color")));
+        final Color c2 = Color.named(String.valueOf(second.attrs().get("color")));
+        if (!c1.value.equals(colorDefault.value) && !c2.value.equals(colorDefault.value)) {
+            return c2;
+        } else {
+            return colorDefault;
+        }
     }
 
-    private boolean hasSVGConverter() {
-        try {
-            Class.forName("org.apache.batik.apps.rasterizer.SVGConverter");
-            return true;
-        } catch (ClassNotFoundException e) {
-            return false;
-        }
+    private MutableNode getNode(final Shape shape, final String label) {
+        return getNode(shape, label, label);
+    }
+
+    private MutableNode getNode(final Shape shape, final String label, final String id) {
+        return nodes.computeIfAbsent(label, value -> {
+            MutableNode result = mutNode(label);
+            result.add(getColor(id));
+            result.add(shape);
+            return result;
+        });
     }
 }

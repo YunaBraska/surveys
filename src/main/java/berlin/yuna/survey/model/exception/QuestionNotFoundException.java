@@ -1,9 +1,7 @@
 package berlin.yuna.survey.model.exception;
 
-public class QuestionNotFoundException extends RuntimeException {
-
-    final String label;
-    final String flow;
+@SuppressWarnings({"unused", "UnusedReturnValue"})
+public class QuestionNotFoundException extends FlowRuntimeException {
 
     public static QuestionNotFoundException itemNotFoundInHistory(final String label, final String flow) {
         return new QuestionNotFoundException(label, flow, "History item [" + label + "] was not found in flow [" + flow + "]");
@@ -18,16 +16,6 @@ public class QuestionNotFoundException extends RuntimeException {
     }
 
     public QuestionNotFoundException(final String label, final String flow, final String message) {
-        super(message);
-        this.label = label;
-        this.flow = flow;
-    }
-
-    public String getLabel() {
-        return label;
-    }
-
-    public String getFlow() {
-        return flow;
+        super(label, flow, message);
     }
 }

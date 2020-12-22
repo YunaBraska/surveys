@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Objects;
 
+@SuppressWarnings({"unused", "UnusedReturnValue"})
 public class HistoryItem implements Comparable<HistoryItem> {
     private String label;
     private Object answer;

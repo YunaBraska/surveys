@@ -5,6 +5,7 @@ package berlin.yuna.survey.model;
  *
  * @param <T> answer type should match the question type
  */
+@SuppressWarnings({"unused", "UnusedReturnValue"})
 public abstract class Condition<T> {
 
     /**

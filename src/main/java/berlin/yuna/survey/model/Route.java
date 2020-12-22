@@ -5,6 +5,7 @@ import berlin.yuna.survey.model.types.QuestionGeneric;
 import java.util.Objects;
 import java.util.function.Function;
 
+@SuppressWarnings({"unused", "UnusedReturnValue"})
 public class Route<T> {
     private final QuestionGeneric<?, ?> target;
     private final Function<T, Boolean> function;

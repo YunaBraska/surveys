@@ -58,7 +58,7 @@ There are only few classes to use
 
 ### Diagram example
 
-![Diagram example](src/test/resources/diagram_png_example.png)
+![Diagram example](src/test/resources/diagram_example.png)
 
 ### Usage
 
@@ -193,8 +193,14 @@ public class MyQuestion extends QuestionGeneric<Boolean, MyQuestion> {
 * A diagram can be easily rendered of any survey (default target = javaTmpDir)
 
 ```java
-        File path=SurveyDiagram.render(survey,"/optional/target/file.svg",FileFormat.SVG)
+        File path=new SurveyDiagram(survey).render("/optional/target/file.svg",Format.SVG)
 ```
+* SurveyDiagram Configurations
+  *  Output path
+  *  Size (width, height)
+  *  Shapes for (Question, Choice)
+  *  Colors for (Answered, Draft, Current, Default)
+  *  Directions (TOP_TO_BOTTOM, BOTTOM_TO_TOP, LEFT_TO_RIGHT, RIGHT_TO_LEFT)
 
 ### Full example
 
@@ -264,9 +270,6 @@ class SurveyExampleTest {
 * [ ] Feature: Add More question examples like radio, checkbox, list, map,...
 * [ ] Feature: Implement groups of questions and answers?
 * [ ] Diagram: Import from a diagram (ConditionRegisterMap)
-* [ ] Diagram: Add title and description from survey
-* [ ] Diagram: Consider exchanging `PlantUml` with `https://github.com/nidi3/graphviz-java`  
-* [ ] Diagram: Show path from Survey which a user has taken
 * [ ] Diagram: Generate heat map from List of Surveys for e.g. most, longest, never taken answers
 * [ ] Diagram: Show possible back transitions
 
