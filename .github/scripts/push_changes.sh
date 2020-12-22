@@ -7,6 +7,8 @@ cd "$(dirname "$0")/../../" || exit 1
 rm -rf coverage*
 rm -rf codeclimate*
 rm -rf ./*reporter*
+# RESET TEST CHANGES
+git restore --source=HEAD --staged --worktree -- src/test
 # SETUP GIT CONFIG
 git config --global user.name 'Kira'
 git config --global user.email 'yuna-@web.de'
