@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>berlin.yuna</groupId>
     <artifactId>surveys</artifactId>
-    <version>0.1.4</version>
+    <version>0.1.5</version>
     <name>Surveys</name>
 
     <description>Survey is a plain java library to provide a base for surveys / questionnaires. It also provides a
@@ -66,6 +66,13 @@
             <groupId>guru.nidi</groupId>
             <artifactId>graphviz-java</artifactId>
             <version>${graphviz-java.version}</version>
+        </dependency>
+
+        <!-- DIAGRAM IMPORTER -->
+        <dependency>
+            <groupId>org.reflections</groupId>
+            <artifactId>reflections</artifactId>
+            <version>0.9.12</version>
         </dependency>
 
         <!-- JSON PROCESSOR -->

@@ -1,8 +1,11 @@
 package berlin.yuna.survey.model.types;
 
+import berlin.yuna.survey.logic.DiagramExporter;
+import berlin.yuna.survey.logic.Survey;
 import berlin.yuna.survey.model.Condition;
 import berlin.yuna.survey.model.HistoryItem;
 import berlin.yuna.survey.model.Route;
+import berlin.yuna.survey.model.exception.FlowRuntimeException;
 import berlin.yuna.survey.model.exception.QuestionTypeException;
 
 import java.util.HashSet;
@@ -142,6 +145,25 @@ public abstract class QuestionGeneric<T, C extends QuestionGeneric<T, C>> implem
     @SuppressWarnings("unchecked")
     public C target(final QuestionGeneric<?, ?> target, final Condition<T> condition) {
         targetGet(target, condition);
+        return (C) this;
+    }
+
+    /**
+     * Defines the next {@code target} {@link QuestionGeneric} which will come after calling {@link QuestionGeneric#answer()} or
+     * {@link QuestionGeneric#answer(Object)} when the {@code condition} is given
+     *
+     * @param target    defines the {@code target} which comes after answering
+     * @param condition {@code condition} which mussed be true to route to the specified {@code target}. Can be null
+     *                  if no condition needs to be matched see {@link QuestionGeneric#targets()}
+     * @return returns the current object
+     */
+    @SuppressWarnings("unchecked")
+    public C target(final QuestionGeneric<?, ?> target, final Class<? extends Condition<?>> condition) {
+        try {
+            targetGet(target, condition == null ? null : (Condition<T>) condition.getConstructor().newInstance());
+        } catch (Exception e) {
+            throw new FlowRuntimeException(label, null, "Condition construction error", e);
+        }
         return (C) this;
     }
 
@@ -303,6 +325,15 @@ public abstract class QuestionGeneric<T, C extends QuestionGeneric<T, C>> implem
         return routes.stream().filter(Route::hasNoCondition).findFirst().map(Route::target);
     }
 
+    /**
+     * Prepares diagram renderer
+     *
+     * @return {@link DiagramExporter} renderer
+     */
+    public DiagramExporter diagram() {
+        return new DiagramExporter(Survey.init(this));
+    }
+
     private static void validateNewLabel(final String label) {
         if (!SPECIAL_CHARS.matcher(label).find()) {
             throw new IllegalArgumentException("Label should only contain enum able characters like [A-Z_0-9]");
@@ -377,7 +408,7 @@ public abstract class QuestionGeneric<T, C extends QuestionGeneric<T, C>> implem
         }
     }
 
-    private void assertSameType(final QuestionGeneric<?,?> original, final QuestionGeneric<?,?> invalid) {
+    private void assertSameType(final QuestionGeneric<?, ?> original, final QuestionGeneric<?, ?> invalid) {
         if (original != null && original.getClass() != invalid.getClass()) {
             throw new QuestionTypeException(label, original, invalid);
         }

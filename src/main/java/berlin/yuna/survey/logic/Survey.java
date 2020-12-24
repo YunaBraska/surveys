@@ -230,6 +230,11 @@ public class Survey {
         return this;
     }
 
+    /**
+     * Returns times taken between each question useful to track answer times
+     *
+     * @return times of answered questions
+     */
     public Map<String, Long> getDurationsMS() {
         final Map<String, Long> result = new LinkedHashMap<>();
         final AtomicReference<HistoryItem> lastTime = new AtomicReference<>(null);
@@ -240,6 +245,15 @@ public class Survey {
             lastTime.set(item);
         });
         return result;
+    }
+
+    /**
+     * Prepares diagram renderer
+     *
+     * @return {@link DiagramExporter} renderer
+     */
+    public DiagramExporter diagram() {
+        return new DiagramExporter(this);
     }
 
     protected QuestionGeneric<?, ?> findLast(final LinkedList<HistoryItem> historySorted) {

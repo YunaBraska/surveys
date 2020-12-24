@@ -7,7 +7,11 @@ public class FlowRuntimeException extends RuntimeException {
     final String flow;
 
     public FlowRuntimeException(final String label, final String flow, final String message) {
-        super(message);
+        this(label, flow, message, null);
+    }
+
+    public FlowRuntimeException(final String label, final String flow, final String message, final Throwable throwable) {
+        super(message, throwable);
         this.label = label;
         this.flow = flow;
     }

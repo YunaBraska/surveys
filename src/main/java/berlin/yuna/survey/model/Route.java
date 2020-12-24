@@ -45,6 +45,10 @@ public class Route<T> {
         return target;
     }
 
+    public Condition<T> getCondition() {
+        return condition;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

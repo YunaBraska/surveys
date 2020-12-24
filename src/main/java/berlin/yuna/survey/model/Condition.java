@@ -1,5 +1,7 @@
 package berlin.yuna.survey.model;
 
+import berlin.yuna.survey.logic.DiagramExporter;
+
 /**
  * Used to
  *
@@ -10,7 +12,7 @@ public abstract class Condition<T> {
 
     /**
      * Optional {@code label}
-     * Used by rendering diagrams {@link berlin.yuna.survey.logic.SurveyDiagram}
+     * Used by rendering diagrams {@link DiagramExporter}
      */
     private final String label;
 
@@ -19,7 +21,7 @@ public abstract class Condition<T> {
     }
 
     /**
-     * @param label (optional) used for render diagrams {@link berlin.yuna.survey.logic.SurveyDiagram}
+     * @param label (optional) used for render diagrams {@link DiagramExporter}
      */
     public Condition(final String label) {
         this.label = label;

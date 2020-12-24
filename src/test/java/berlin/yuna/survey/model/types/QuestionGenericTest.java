@@ -22,6 +22,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag("UnitTest")
@@ -161,6 +162,11 @@ class QuestionGenericTest {
         assertThat(route.getLabel(), is(customChoice.getLabel()));
         assertThat(route.equals(new Route<>(Question.of(Q1), null, customChoice)), is(true));
         assertThat(route.toString(), is(containsString("AnswerRoute{target=Question{label='Q1'}")));
+    }
+
+    @Test
+    void diagram() {
+        assertThat(Question.of(Q1).diagram(), is(notNullValue()));
     }
 
     @Test

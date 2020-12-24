@@ -216,6 +216,11 @@ class SurveyTest {
 
     }
 
+    @Test
+    void diagram() {
+        assertThat(createSimpleSurvey().diagram(), is(notNullValue()));
+    }
+
     public static Survey createSimpleSurvey() {
         Question start = Question.of("START");
         start.targetGet(Question.of("Q1"))

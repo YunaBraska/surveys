@@ -20,7 +20,7 @@ public class Question extends QuestionGeneric<String, Question> {
         return new Question(label);
     }
 
-    private Question(String label) {
+    public Question(String label) {
         super(label);
     }
 }
