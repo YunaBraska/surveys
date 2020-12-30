@@ -2,7 +2,7 @@ package berlin.yuna.survey.logic;
 
 import berlin.yuna.survey.model.HistoryItem;
 import berlin.yuna.survey.model.exception.QuestionNotFoundException;
-import berlin.yuna.survey.model.types.QuestionGeneric;
+import berlin.yuna.survey.model.types.FlowItem;
 import berlin.yuna.survey.model.types.simple.Question;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -161,11 +161,14 @@ class SurveyTest {
     void transitionBackAndForward() {
         final AtomicBoolean backTriggered = new AtomicBoolean(false);
         final Survey survey = createSimpleSurvey().answer(START).answer(Q1).answer(Q2);
-        survey.get(Q2).onBack(answer -> backTriggered.set(true));
+        survey.get(Q2).onBack(answer -> {
+            backTriggered.set(true);
+            return true;
+        });
 
         //INVALID TARGET
         assertThrows(QuestionNotFoundException.class, () -> survey.transitTo(Question.of(Q4)));
-        QuestionGeneric<?, ?> before = survey.get();
+        FlowItem<?, ?> before = survey.get();
         //SAME TARGET
         survey.transitTo(survey.get());
         assertThat(survey.get(), is(equalTo(before)));
@@ -175,8 +178,9 @@ class SurveyTest {
         assertThat(survey.get(), is(equalTo(Question.of(Q1))));
         assertThat(survey.getPrevious(), is(equalTo(Question.of(START))));
         assertThat(backTriggered.get(), is(true));
-        assertThat(survey.getHistory().stream().filter(HistoryItem::isDraft).toArray().length, is(2));
-        assertThat(survey.getHistory().stream().filter(HistoryItem::isNotDraft).toArray().length, is(1));
+        assertThat(survey.getHistory().stream().filter(HistoryItem::isCurrent).toArray().length, is(1));
+        assertThat(survey.getHistory().stream().filter(HistoryItem::isDraft).toArray().length, is(1));
+        assertThat(survey.getHistory().stream().filter(HistoryItem::isNotDraft).toArray().length, is(2));
 
         //FORWARD
         survey.transitTo(before.label());
@@ -184,6 +188,47 @@ class SurveyTest {
         assertThat(survey.getPrevious(), is(equalTo(Question.of(Q2))));
         assertThat(survey.getHistory().stream().filter(HistoryItem::isDraft).toArray().length, is(0));
         assertThat(survey.getHistory().stream().filter(HistoryItem::isNotDraft).toArray().length, is(3));
+    }
+
+    @Test
+    @DisplayName("Transition back without automatic")
+    void transitionBackAndForwardWithoutAutomatic() {
+        final Survey survey = createSimpleSurvey().answer(START).answer(Q1).answer(Q2);
+
+        survey.autoBackTransition(false);
+        assertThat(survey.get(), is(equalTo(Question.of(Q3))));
+        assertThat(survey.transitTo(START), is(false));
+        assertThat(survey.get(), is(equalTo(Question.of(Q3))));
+
+        survey.autoBackTransition(true);
+        assertThat(survey.transitTo(START), is(true));
+        assertThat(survey.get(), is(equalTo(Question.of(START))));
+    }
+
+    @Test
+    @DisplayName("Transition back without automatic and partial back rules")
+    void transitionBackAndForwardWithoutAutomaticButBackRules() {
+        final Survey survey = createSimpleSurvey().answer(START).answer(Q1).answer(Q2);
+
+        survey.autoBackTransition(false);
+        survey.get(Question.of(Q2)).onBack(s -> true);
+
+        assertThat(survey.get(), is(equalTo(Question.of(Q3))));
+        assertThat(survey.transitTo(START), is(false));
+        assertThat(survey.get(), is(equalTo(Question.of(Q2))));
+    }
+
+    @Test
+    @DisplayName("Transition back block automatic")
+    void transitionBackAndForwardBlockAutomatic() {
+        final Survey survey = createSimpleSurvey().answer(START).answer(Q1).answer(Q2);
+
+        survey.autoBackTransition(true);
+        survey.get(Question.of(Q1)).onBack(s -> false);
+
+        assertThat(survey.get(), is(equalTo(Question.of(Q3))));
+        assertThat(survey.transitTo(START), is(false));
+        assertThat(survey.get(), is(equalTo(Question.of(Q2))));
     }
 
     @Test

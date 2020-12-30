@@ -26,7 +26,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag("UnitTest")
-class QuestionGenericTest {
+class FlowItemTest {
 
     public static final String Q1 = "Q1";
     public static final String Q2 = "Q2";
@@ -64,7 +64,7 @@ class QuestionGenericTest {
         final Question subFlow = Question.of(Q2).target(Question.of(Q4)).target(Question.of(Q5), a -> a.equalsIgnoreCase("ok"));
         final Question flow = Question.of(Q1).target(subFlow).target(Question.of(Q3), a -> a.equalsIgnoreCase("fail"));
 
-        Set<QuestionGeneric<?, ?>> targets = flow.targets();
+        Set<FlowItem<?, ?>> targets = flow.targets();
         assertThat(targets, hasItems(Question.of(Q2), Question.of(Q3)));
         assertThat(targets, not(hasItems(Question.of(Q1), Question.of(Q4), Question.of(Q5))));
     }
@@ -81,7 +81,7 @@ class QuestionGenericTest {
         flow.target(q3);
         assertThat(q2.parents(), not(hasItems(flow)));
 
-        Set<QuestionGeneric<?, ?>> targets = flow.targets();
+        Set<FlowItem<?, ?>> targets = flow.targets();
         assertThat(targets, not(hasItems(q2)));
         assertThat(targets, hasItems(q3));
     }
@@ -137,8 +137,8 @@ class QuestionGenericTest {
     @Test
     @DisplayName("match SurveyAnswer")
     void match() {
-        assertThat(Question.of(Q1).match(new HistoryItem("Q1", null, true, false)), is(true));
-        assertThat(Question.of(Q1).match(new HistoryItem("Q2", null, true, false)), is(false));
+        assertThat(Question.of(Q1).match(new HistoryItem("Q1", null, HistoryItem.State.DRAFT)), is(true));
+        assertThat(Question.of(Q1).match(new HistoryItem("Q2", null, HistoryItem.State.DRAFT)), is(false));
     }
 
     @Test
@@ -146,10 +146,13 @@ class QuestionGenericTest {
     void onBack() {
         final AtomicBoolean isBackTriggered = new AtomicBoolean(false);
         final Question flow = Question.of(Q1);
-        flow.onBack(answer -> isBackTriggered.set(true));
+        flow.onBack(answer -> {
+            isBackTriggered.set(true);
+            return true;
+        });
         assertThat(isBackTriggered.get(), is(false));
 
-        flow.onBack("this triggers on back");
+        flow.revert("This triggers back transition");
         assertThat(isBackTriggered.get(), is(true));
     }
 
@@ -157,10 +160,10 @@ class QuestionGenericTest {
     @DisplayName("AnswerRoute [COV]")
     void checkAnswerRoute() {
         final CustomCondition customChoice = new CustomCondition();
-        Route<String> route = new Route<>(Question.of(Q1), null, customChoice);
+        Route<String> route = new Route<>(Question.of(Q1), null, customChoice, false);
         assertThat(route.target(), is(Question.of(Q1)));
         assertThat(route.getLabel(), is(customChoice.getLabel()));
-        assertThat(route.equals(new Route<>(Question.of(Q1), null, customChoice)), is(true));
+        assertThat(route.equals(new Route<>(Question.of(Q1), null, customChoice, false)), is(true));
         assertThat(route.toString(), is(containsString("AnswerRoute{target=Question{label='Q1'}")));
     }
 

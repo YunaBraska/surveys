@@ -1,10 +1,10 @@
 package berlin.yuna.survey.model.types.simple;
 
-import berlin.yuna.survey.model.types.QuestionGeneric;
+import berlin.yuna.survey.model.types.FlowItem;
 
 import java.util.Optional;
 
-public class QuestionLong extends QuestionGeneric<Long, QuestionLong> {
+public class QuestionLong extends FlowItem<Long, QuestionLong> {
 
 
     @Override

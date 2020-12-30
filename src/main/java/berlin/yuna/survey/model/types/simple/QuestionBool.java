@@ -1,10 +1,10 @@
 package berlin.yuna.survey.model.types.simple;
 
-import berlin.yuna.survey.model.types.QuestionGeneric;
+import berlin.yuna.survey.model.types.FlowItem;
 
 import java.util.Optional;
 
-public class QuestionBool extends QuestionGeneric<Boolean, QuestionBool> {
+public class QuestionBool extends FlowItem<Boolean, QuestionBool> {
 
     @Override
     public Optional<Boolean> parse(final Object answer) {

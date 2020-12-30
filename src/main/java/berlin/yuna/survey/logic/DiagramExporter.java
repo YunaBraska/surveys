@@ -4,7 +4,7 @@ import berlin.yuna.survey.model.DiagramConfig;
 import berlin.yuna.survey.model.DiagramConfig.ElementType;
 import berlin.yuna.survey.model.HistoryItem;
 import berlin.yuna.survey.model.Route;
-import berlin.yuna.survey.model.types.QuestionGeneric;
+import berlin.yuna.survey.model.types.FlowItem;
 import berlin.yuna.survey.model.types.simple.Question;
 import guru.nidi.graphviz.attribute.Attributes;
 import guru.nidi.graphviz.attribute.Color;
@@ -107,14 +107,14 @@ public class DiagramExporter {
     private MutableNode createLeaves() {
         links.clear();
         nodes.clear();
-        final QuestionGeneric<?, ?> first = survey.getFirst();
+        final FlowItem<?, ?> first = survey.getFirst();
         addLeave(first, first.routes());
         return getNode(first);
     }
 
-    private void addLeave(final QuestionGeneric<?, ?> previous, final Set<? extends Route<?>> routes) {
+    private void addLeave(final FlowItem<?, ?> previous, final Set<? extends Route<?>> routes) {
         routes.forEach(route -> {
-            final QuestionGeneric<?, ?> current = route.target();
+            final FlowItem<?, ?> current = route.target();
             //STOP ENDLESS CIRCULATION
             if (link(previous, route)) {
                 //CHOICE
@@ -122,7 +122,7 @@ public class DiagramExporter {
                     final String id = survey.getHistory().stream().filter(item -> !survey.get().match(item)).filter(item -> current.targets().stream().anyMatch(item::match)).findFirst().map(HistoryItem::getLabel).orElse(current.label() + SUFFIX_CHOICE);
                     final Question option = Question.of(current.label() + SUFFIX_CHOICE);
                     getNode(ITEM_CHOICE, option, id);
-                    link(current, new Route<>(option, null, null));
+                    link(current, new Route<>(option, null, null, false));
                     addLeave(option, current.routes());
                 } else {
                     addLeave(current, current.routes());
@@ -131,7 +131,7 @@ public class DiagramExporter {
         });
     }
 
-    private boolean link(final QuestionGeneric<?, ?> first, final Route<?> route) {
+    private boolean link(final FlowItem<?, ?> first, final Route<?> route) {
         final MutableNode firstNode = getNode(first);
         final MutableNode secondNode = getNode(route.target());
         final String id = first.label() + " -> " + route.target().label();
@@ -171,11 +171,11 @@ public class DiagramExporter {
         }
     }
 
-    private MutableNode getNode(final QuestionGeneric<?, ?> flowItem) {
+    private MutableNode getNode(final FlowItem<?, ?> flowItem) {
         return getNode(ITEM_DEFAULT, flowItem, flowItem.label());
     }
 
-    private MutableNode getNode(final ElementType type, final QuestionGeneric<?, ?> flowItem, final String id) {
+    private MutableNode getNode(final ElementType type, final FlowItem<?, ?> flowItem, final String id) {
         return nodes.computeIfAbsent(flowItem.label(), value -> {
             final MutableNode result = mutNode(flowItem.label());
             config.get(type).stream().filter(attr -> !requireNonNull(CONFIG_KEY_COLOR).equals(toKey(attr))).forEach(result::add);

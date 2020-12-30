@@ -25,7 +25,10 @@ class SurveyExampleTest {
         //DEFINE FLOW
         flow.target(Question.of("Q1_TRUE"), answer -> answer == true);
         flow.targetGet(Question.of("Q1_FALSE"), answer -> answer == false)
-                .targetGet(Question.of("Q2")).onBack(oldAnswer -> question2BackTriggered.set(true))
+                .targetGet(Question.of("Q2")).onBack(oldAnswer -> {
+                    question2BackTriggered.set(true);
+                    return true;
+                })
                 .targetGet(Question.of("Q3"))
                 .targetGet(Question.of("END"));
 

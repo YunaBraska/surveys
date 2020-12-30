@@ -2,7 +2,7 @@ package berlin.yuna.survey.model.types;
 
 import java.util.Optional;
 
-public class QuestionInvalid extends QuestionGeneric<Integer, QuestionInvalid> {
+public class QuestionInvalid extends FlowItem<Integer, QuestionInvalid> {
 
     @Override
     public Optional<Integer> parse(final Object answer) {

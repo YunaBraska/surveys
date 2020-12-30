@@ -20,15 +20,18 @@ to [generate diagrams](#diagram-example) and to [measure answer times](#answer-d
     * [Motivation](#motivation)
     * [Requirements](#requirements)
     * [Diagram example](#diagram-example)
-* [Question](https://github.com/YunaBraska/surveys/blob/master/src/main/java/berlin/yuna/survey/model/types/QuestionGeneric.java) usage \[Flow definition\]
+    * [Data Structure](#data-structure)
+* [Question](https://github.com/YunaBraska/surveys/blob/master/src/main/java/berlin/yuna/survey/model/types/FlowItem.java) usage \[Flow definition\]
     * [Define a flow](#define-a-flow)
     * [Define a flow condition](#define-a-condition)
-    * [Define-a-Back-Event/Condition](#define-a-back-event-with-condition)
     * [Define custom condition](#define-custom-condition)
     * [Define custom question](#define-custom-question)
+    * [Define-a-Back-Event/Condition](#define-a-back-event-with-condition)
+    * [Disable back transitions without conditions](#disable-back-transitions-without-condition)
 * [Survey](https://github.com/YunaBraska/surveys/blob/master/src/main/java/berlin/yuna/survey/logic/Survey.java) usage \[answers, history, transitions\]
     * [Start a survey](#start-a-survey)
     * [Answer a survey](#answer-a-survey)
+    * [Transition Back/Forward](#transition-backward-or-forward)
     * [Export a survey](#export-a-survey)
     * [Import a survey](#import-a-survey)
 * [DiagramExporter](https://github.com/YunaBraska/surveys/blob/master/src/main/java/berlin/yuna/survey/logic/DiagramExporter.java) usage \[Diagram exporter\]
@@ -59,6 +62,9 @@ On this example:
 * Orange = Current
 * Blue = Transitioned back path
 ![Diagram example](src/test/resources/diagram_example.png)
+
+### Data Structure
+![Diagram example](src/test/resources/structure.png)
 
 #### Define a flow
 
@@ -111,7 +117,7 @@ public class CustomChoice extends Choice<String> {
 ```java
 import java.util.Optional;
 
-public class MyQuestion extends QuestionGeneric<Boolean, MyQuestion> {
+public class MyQuestion extends FlowItem<Boolean, MyQuestion> {
 
     //Parse answer to defined type which will be used to match a condition
     @Override
@@ -177,9 +183,19 @@ public class MyQuestion extends QuestionGeneric<Boolean, MyQuestion> {
 
 ```
 
+#### Disable back transitions without condition
+* On default back transitions without conditions are allowed - this can be disabled by `autoBackTransition`  
+
+```java
+        Survey survey = [...]
+        boolean success = survey.autoBackTransition(false)
+
+```
+
 #### Render a diagram
 
 * A diagram can be easily rendered of any survey or flowItem (default target = javaTmpDir)
+* Java lambda functions are not exportable!
 
 ```java
     final File path=survey.diagram().save(survey, "/optional/target/file.svg", Format.SVG)
@@ -209,7 +225,7 @@ public class MyQuestion extends QuestionGeneric<Boolean, MyQuestion> {
 ```
 #### Answer duration metrics
 
-* Surveys can output the time spent to answer for answering the questions
+* Surveys can output the time a user spent to answer the questions
 
 ```java
         Survey survey = [...]
@@ -219,9 +235,9 @@ public class MyQuestion extends QuestionGeneric<Boolean, MyQuestion> {
 #### Import from a diagram 
 * Format must be [DOT](https://en.wikipedia.org/wiki/DOT_(graph_description_language))
 * Import can be imported by \[File, String, InputStream, MutableGraph\]
-* Its required to define possible flowItems (Child's of QuestionGeneric) and conditions (Child' of Condition) since the library doesn't use reflections yet
+* Its required to define possible flowItems (Child's of FlowItem) and conditions (Child' of Condition) since the library doesn't use reflections yet
 ```java
-    final QuestionGeneric<?,?> flow = new DiagramImporter().read(file)
+    final FlowItem<?,?> flow = new DiagramImporter().read(file)
 ```
 
 #### Create a diagram manually
@@ -295,9 +311,6 @@ class SurveyExampleTest {
 ### TODOs
 
 * [ ] Core: Implement custom exceptions
-* [ ] Core: Implement onBack conditions
-* [ ] Core: Fix possible circular transition on `transitTo`
-* [ ] Feature: Survey config `autoBack=[true/false]`
 * [ ] Feature: Implement context for conditions
 * [ ] Feature: Add More question examples like radio, checkbox, list, map,...
 * [ ] Feature: Implement groups of questions and answers?

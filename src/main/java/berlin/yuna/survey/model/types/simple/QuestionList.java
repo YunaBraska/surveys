@@ -1,6 +1,6 @@
 package berlin.yuna.survey.model.types.simple;
 
-import berlin.yuna.survey.model.types.QuestionGeneric;
+import berlin.yuna.survey.model.types.FlowItem;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Arrays.stream;
 
-public class QuestionList extends QuestionGeneric<Collection<String>, QuestionList> {
+public class QuestionList extends FlowItem<Collection<String>, QuestionList> {
 
 
     @Override

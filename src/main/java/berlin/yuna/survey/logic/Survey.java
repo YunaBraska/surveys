@@ -1,17 +1,20 @@
 package berlin.yuna.survey.logic;
 
+import berlin.yuna.survey.model.Condition;
 import berlin.yuna.survey.model.HistoryItem;
-import berlin.yuna.survey.model.types.QuestionGeneric;
+import berlin.yuna.survey.model.types.FlowItem;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collector;
@@ -25,9 +28,9 @@ import static berlin.yuna.survey.model.exception.QuestionNotFoundException.itemN
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public class Survey {
 
-    private QuestionGeneric<?, ?> last;
-    private QuestionGeneric<?, ?> flowStart;
-    private boolean autoBackTransition = true; //TODO: move on with config
+    private FlowItem<?, ?> last;
+    private FlowItem<?, ?> flowStart;
+    private boolean autoBackTransition = true;
     //https://stackoverflow.com/questions/4724995/lock-free-concurrent-linked-list-in-java
     private final LinkedList<HistoryItem> history = new LinkedList<>();
 
@@ -38,20 +41,20 @@ public class Survey {
      * @return {@link Survey}
      * @throws IllegalStateException on {@code null}
      */
-    public static Survey init(final QuestionGeneric<?, ?> flowStart) {
+    public static Survey init(final FlowItem<?, ?> flowStart) {
         return new Survey(flowStart);
     }
 
     /**
      * Continues {@link Survey} from a history
-     * Removes all invalid {@link QuestionGeneric} items from the history
+     * Removes all invalid {@link FlowItem} items from the history
      *
      * @param flowStart start item of the flow
      * @param history   should not be empty as {@link Survey} needs a start item
      * @return {@link Survey}
-     * @throws IllegalStateException when the {@code history} is empty or has no valid {@link QuestionGeneric}
+     * @throws IllegalStateException when the {@code history} is empty or has no valid {@link FlowItem}
      */
-    public static Survey init(final QuestionGeneric<?, ?> flowStart, final Iterable<HistoryItem> history) {
+    public static Survey init(final FlowItem<?, ?> flowStart, final Iterable<HistoryItem> history) {
         Survey context = init(flowStart);
         final LinkedList<HistoryItem> linkedHistory = StreamSupport.stream(history.spliterator(), false).filter(answer -> flowStart.get(answer.getLabel()).isPresent()).collect(Collectors.toCollection(LinkedList::new));
         if (linkedHistory.isEmpty()) {
@@ -65,10 +68,10 @@ public class Survey {
     }
 
     /**
-     * Transit to a specific {@link QuestionGeneric} in the flow
+     * Transit to a specific {@link FlowItem} in the flow
      *
-     * @param label for {@link QuestionGeneric} to transition to
-     * @return {@code true} if transition is allowed, {@code false} on config of {@link QuestionGeneric#onBack(Object)}
+     * @param label for {@link FlowItem} to transition to
+     * @return {@code true} if transition is allowed, {@code false} on back transition config
      * @throws IllegalArgumentException if the label is not part of the flow or when the forward transition has not enough answers
      */
     public boolean transitTo(final String label) {
@@ -76,14 +79,14 @@ public class Survey {
     }
 
     /**
-     * Transit to a specific {@link QuestionGeneric} in the flow
+     * Transit to a specific {@link FlowItem} in the flow
      *
-     * @param target {@link QuestionGeneric} to transition to
-     * @return {@code true} if transition is allowed, {@code false} on config of {@link QuestionGeneric#onBack(Object)}
+     * @param target {@link FlowItem} to transition to
+     * @return {@code true} if transition is allowed, {@code false} on config of {@link FlowItem#onBack(Condition)}
      * @throws IllegalArgumentException if the label is not part of the flow or when the forward transition has not
-     *                                  enough answers (will transition to the nearest possible {@link QuestionGeneric})
+     *                                  enough answers (will transition to the nearest possible {@link FlowItem})
      */
-    public boolean transitTo(final QuestionGeneric<?, ?> target) {
+    public boolean transitTo(final FlowItem<?, ?> target) {
         if (target.equals(get())) {
             return true;
         }
@@ -93,99 +96,77 @@ public class Survey {
         if (history.stream().filter(HistoryItem::isNotDraft).anyMatch(target::match)) {
             result = runBackTransitions(target);
         } else {
-            final Map<String, Object> mappedHistory = getHistoryAnswered().collect(toLinkedMap(HistoryItem::getLabel, HistoryItem::getAnswer));
-            String label = flowStart.label();
-            do {
-                if (!mappedHistory.containsKey(label)) {
-                    //FIXME: custom checked exception
-                    throw new IllegalArgumentException("Unable transition to [" + target.label() + "]" + " No answer was found for [" + label + "]");
-                }
-                final String previousLabel = label;
-                final QuestionGeneric<?, ?> currentQuestion = answer(mappedHistory.get(label), false).get();
-                label = currentQuestion.label();
-                if (label.equals(previousLabel)) {
-                    //FIXME: custom checked exception
-                    throw new IllegalArgumentException("Unable transition to [" + target.label() + "]" + " Answer from the history did not solved [" + label + "]");
-                }
-                last = currentQuestion;
-            } while (!label.equals(target.label()));
-            if (mappedHistory.containsKey(target.label())) {
-                answer(label, false);
-            }
+            runForwardTransitions(target);
         }
-
-        //TODO: transition forward:
-        // * avoid circular flow e.g. for defined transition back as a target
-
         return result;
     }
 
     /**
-     * Get current {@link QuestionGeneric} of the flow
+     * Get current {@link FlowItem} of the flow
      *
-     * @return {@link QuestionGeneric} of the current flow
+     * @return {@link FlowItem} of the current flow
      */
-    public QuestionGeneric<?, ?> get() {
+    public FlowItem<?, ?> get() {
         return last;
     }
 
     /**
      * Get a flow item by the given {@code String}
-     * To avoid cast its recommended to use {@link QuestionGeneric#get(QuestionGeneric)}
+     * To avoid cast its recommended to use {@link FlowItem#get(FlowItem)}
      *
      * @param label The {@code label} to search in flow
-     * @return Returns {@link Optional<QuestionGeneric>} or {@code null} when flow doesn't contain the
+     * @return Returns {@link Optional< FlowItem >} or {@code null} when flow doesn't contain the
      * requested item
      */
-    public QuestionGeneric<?, ?> get(final String label) {
+    public FlowItem<?, ?> get(final String label) {
         return flowStart.get(label).orElse(null);
     }
 
     /**
      * Get a flow item by the given {@code enum}
-     * To avoid cast its recommended to use {@link QuestionGeneric#get(QuestionGeneric)}
+     * To avoid cast its recommended to use {@link FlowItem#get(FlowItem)}
      *
      * @param label The {@code label} to search in flow
-     * @return Returns {@link QuestionGeneric} or {@code null} when flow doesn't contain the
+     * @return Returns {@link FlowItem} or {@code null} when flow doesn't contain the
      * requested item
      */
-    public QuestionGeneric<?, ?> get(final Enum<?> label) {
+    public FlowItem<?, ?> get(final Enum<?> label) {
         return flowStart.get(label).orElse(null);
     }
 
     /**
-     * Get a flow item by the given {@link QuestionGeneric}
+     * Get a flow item by the given {@link FlowItem}
      *
-     * @param type {@link QuestionGeneric} to search in flow
-     * @return Returns {@link QuestionGeneric} or {@code null} when flow doesn't contain the
+     * @param type {@link FlowItem} to search in flow
+     * @return Returns {@link FlowItem} or {@code null} when flow doesn't contain the
      * requested item
      */
-    public <I extends QuestionGeneric<?, ?>> I get(final I type) {
+    public <I extends FlowItem<?, ?>> I get(final I type) {
         return flowStart.get(type).orElse(null);
     }
 
     /**
-     * Get previous {@link QuestionGeneric} from the flow
+     * Get previous {@link FlowItem} from the flow
      *
-     * @return previous {@link QuestionGeneric} and {@code null} if there is no previous entry
+     * @return previous {@link FlowItem} and {@code null} if there is no previous entry
      */
-    public QuestionGeneric<?, ?> getPrevious() {
+    public FlowItem<?, ?> getPrevious() {
         return last.parents().stream().filter(q -> getHistoryAnswered().anyMatch(item -> item.match(q))).findFirst().orElse(null);
     }
 
     /**
-     * Get first {@link QuestionGeneric} of the flow
+     * Get first {@link FlowItem} of the flow
      *
-     * @return first {@link QuestionGeneric} of the current flow
+     * @return first {@link FlowItem} of the current flow
      */
-    public QuestionGeneric<?, ?> getFirst() {
+    public FlowItem<?, ?> getFirst() {
         return flowStart;
     }
 
     /**
      * Check if the current flow has ended
      *
-     * @return true if there is no next {@link QuestionGeneric}
+     * @return true if there is no next {@link FlowItem}
      */
     public boolean isEnded() {
         return last.targets().isEmpty() && getHistoryAnswered().filter(HistoryItem::isNotDraft).anyMatch(answer -> answer.match(last));
@@ -210,7 +191,7 @@ public class Survey {
     }
 
     /**
-     * Solves the current {@link QuestionGeneric} of the flow
+     * Solves the current {@link FlowItem} of the flow
      *
      * @return {@link Survey}
      */
@@ -220,7 +201,7 @@ public class Survey {
 
     private Survey answer(final Object answer, final boolean upDate) {
         markAsAnswered(last.label(), answer, upDate);
-        Optional<QuestionGeneric<?, ?>> result = last.parseAndAnswer(answer);
+        Optional<FlowItem<?, ?>> result = last.parseAndAnswer(answer);
         if (result.isPresent()) {
             last = result.get();
             if (upDate && !isEnded()) {
@@ -240,11 +221,31 @@ public class Survey {
         final AtomicReference<HistoryItem> lastTime = new AtomicReference<>(null);
         getHistoryAnswered().sorted().filter(HistoryItem::isNotDraft).forEach(item -> {
             Optional.ofNullable(lastTime.get()).ifPresent(
-                    lastT -> result.put(lastT.getLabel(), Duration.between(lastT.getAnsweredAt(), item.getAnsweredAt()).toMillis())
+                    lastT -> result.put(lastT.getLabel(), Duration.between(lastT.getCreatedAt(), item.getCreatedAt()).toMillis())
             );
             lastTime.set(item);
         });
         return result;
+    }
+
+    /**
+     * Defines if back transitions are allowed for non configured back conditions
+     *
+     * @param enableAutomatic {@code true} on default
+     * @return {@link Survey}
+     */
+    public Survey autoBackTransition(final boolean enableAutomatic) {
+        autoBackTransition = enableAutomatic;
+        return this;
+    }
+
+    /**
+     * Definition if back transitions are allowed for non configured back conditions
+     *
+     * @return {@code true} on default
+     */
+    public boolean hasAutoBackTransition() {
+        return autoBackTransition;
     }
 
     /**
@@ -256,7 +257,7 @@ public class Survey {
         return new DiagramExporter(this);
     }
 
-    protected QuestionGeneric<?, ?> findLast(final LinkedList<HistoryItem> historySorted) {
+    protected FlowItem<?, ?> findLast(final LinkedList<HistoryItem> historySorted) {
         final String label = historySorted.stream()
                 .filter(HistoryItem::isNotAnswered).findFirst()
                 .map(HistoryItem::getLabel)
@@ -265,11 +266,11 @@ public class Survey {
     }
 
     /**
-     * Find first {@link QuestionGeneric} of the flow
+     * Find first {@link FlowItem} of the flow
      *
-     * @return first {@link QuestionGeneric} of the current flow
+     * @return first {@link FlowItem} of the current flow
      */
-    private QuestionGeneric<?, ?> findFirst() {
+    private FlowItem<?, ?> findFirst() {
         return flowStart.get(history.getFirst().getLabel()).orElseThrow(() -> itemNotFound(history.getFirst().getLabel(), flowStart.label()));
     }
 
@@ -279,20 +280,19 @@ public class Survey {
 
     private void markAsCurrent(final String label) {
         final HistoryItem historyItem = getOrCreateAnswer(label);
-        historyItem.setDraft(true);
-        historyItem.setAnsweredAt(null);
+        historyItem.setState(HistoryItem.State.CURRENT);
     }
 
     private void markAsDraft(final String label) {
-        getOrCreateAnswer(label).setDraft(true);
+        getOrCreateAnswer(label).setState(HistoryItem.State.DRAFT);
     }
 
     private void markAsAnswered(final String label, final Object answer, final boolean upDate) {
         final HistoryItem historyItem = getOrCreateAnswer(label);
-        if (upDate || historyItem.getAnsweredAt() == null) {
-            historyItem.setAnsweredAt(LocalDateTime.now(ZoneId.of("UTC")));
+        if (upDate || historyItem.isNotAnswered()) {
+            historyItem.setCreatedAt(LocalDateTime.now(ZoneId.of("UTC")));
         }
-        historyItem.setDraft(false);
+        historyItem.setState(HistoryItem.State.ANSWERED);
         historyItem.setAnswer(answer);
     }
 
@@ -306,42 +306,66 @@ public class Survey {
         return history.get(index);
     }
 
-    private Survey(final QuestionGeneric<?, ?> startQuestion) {
+    private Survey(final FlowItem<?, ?> startQuestion) {
         assertExists(startQuestion);
         this.last = startQuestion;
         markAsCurrent(last.label());
         flowStart = startQuestion;
     }
 
-    private void assertExists(QuestionGeneric<?, ?> startQuestion) {
+    private void assertExists(FlowItem<?, ?> startQuestion) {
         if (startQuestion == null) {
-            throw new IllegalArgumentException("Missing " + QuestionGeneric.class.getSimpleName() + ", given was null");
+            throw new IllegalArgumentException("Missing " + FlowItem.class.getSimpleName() + ", given was null");
         }
     }
 
-    private boolean runBackTransitions(final QuestionGeneric<?, ?> question) {
+
+    private void runForwardTransitions(final FlowItem<?, ?> target) {
+        final Set<String> checkedLabel = new HashSet<>();
+        final Map<String, Object> mappedHistory = getHistoryAnswered().collect(toLinkedMap(HistoryItem::getLabel, HistoryItem::getAnswer));
+        String label = flowStart.label();
+        do {
+            final FlowItem<?, ?> currentQuestion = answer(mappedHistory.get(label), false).get();
+            label = currentQuestion.label();
+            if (checkedLabel.contains(label)) {
+                //FIXME: custom checked exception
+                throw new IllegalArgumentException("Unable transition to [" + target.label() + "]" + " Answer from the history did not solved [" + label + "]");
+            }
+            checkedLabel.add(label);
+            last = currentQuestion;
+        } while (!label.equals(target.label()));
+        if (mappedHistory.containsKey(target.label())) {
+            answer(label, false);
+        }
+    }
+
+    private boolean runBackTransitions(final FlowItem<?, ?> question) {
         final Iterator<HistoryItem> iterator = new LinkedList<>(history).descendingIterator();
         while (iterator.hasNext()) {
             HistoryItem answer = iterator.next();
-            if (!answer.isAnswered()) {
+            if (answer.isCurrent()) {
                 history.remove(answer);
                 continue;
-            } else if (!flowStart.get(answer.getLabel()).map(q -> q.onBack(answer.getAnswer())).orElse(autoBackTransition)) {
-                markAsDraft(answer.getLabel());
-                last = flowStart.getOrElse(answer.getLabel(), last);
-                return false;
-            } else if (answer.getLabel().equals(question.label())) {
-                markAsDraft(answer.getLabel());
+            }
+            if (answer.getLabel().equals(question.label())) {
+                markAsCurrent(answer.getLabel());
                 last = flowStart.getOrElse(answer.getLabel(), last);
                 return true;
             }
-            markAsDraft(answer.getLabel());
-            last = flowStart.getOrElse(answer.getLabel(), last);
+            final boolean revertIsAllowed = flowStart.get(answer.getLabel()).flatMap(q -> q.parseAndRevert(answer.getAnswer())).orElse(autoBackTransition);
+            if (revertIsAllowed) {
+                markAsDraft(answer.getLabel());
+                last = flowStart.getOrElse(answer.getLabel(), last);
+            } else {
+                markAsCurrent(last.label());
+                return false;
+            }
         }
+        markAsCurrent(last.label());
         return true;
     }
 
-    private void assertQuestionBelongsToFlow(final QuestionGeneric<?, ?> question) {
+    private void assertQuestionBelongsToFlow(final FlowItem<?, ?> question) {
         assertExists(question);
         if (flowStart.get(question.label()).isEmpty()) {
             throw itemNotFoundInHistory(question.label(), flowStart.label());

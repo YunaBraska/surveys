@@ -1,20 +1,22 @@
 package berlin.yuna.survey.model;
 
-import berlin.yuna.survey.model.types.QuestionGeneric;
+import berlin.yuna.survey.model.types.FlowItem;
 
 import java.util.Objects;
 import java.util.function.Function;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public class Route<T> {
-    private final QuestionGeneric<?, ?> target;
+    private final FlowItem<?, ?> target;
     private final Function<T, Boolean> function;
     private final Condition<T> condition;
+    private final boolean backwards;
 
-    public Route(final QuestionGeneric<?, ?> target, final Function<T, Boolean> function, final Condition<T> condition) {
+    public Route(final FlowItem<?, ?> target, final Function<T, Boolean> function, final Condition<T> condition, final boolean backwards) {
         this.target = target;
         this.condition = condition;
         this.function = function;
+        this.backwards = backwards;
     }
 
     public boolean apply(T answer) {
@@ -23,6 +25,10 @@ public class Route<T> {
 
     public boolean hasChoice() {
         return condition != null;
+    }
+
+    public boolean hasTarget() {
+        return target != null;
     }
 
     public boolean hasFunction() {
@@ -41,7 +47,7 @@ public class Route<T> {
         return hasChoice() ? (condition.getLabel() != null ? condition.getLabel() : condition.getClass().getSimpleName()) : null;
     }
 
-    public QuestionGeneric<?, ?> target() {
+    public FlowItem<?, ?> target() {
         return target;
     }
 
@@ -49,23 +55,31 @@ public class Route<T> {
         return condition;
     }
 
+    public boolean isBackwardFlow() {
+        return backwards;
+    }
+
+    public boolean isForwardFlow() {
+        return !isBackwardFlow();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        Route<?> that = (Route<?>) o;
+        Route<?> route = (Route<?>) o;
 
-        if (!Objects.equals(target, that.target)) return false;
-        if (!Objects.equals(function, that.function)) return false;
-        return Objects.equals(condition, that.condition);
+        if (backwards != route.backwards) return false;
+        if (!Objects.equals(function, route.function)) return false;
+        return Objects.equals(condition, route.condition);
     }
 
     @Override
     public int hashCode() {
-        int result = target != null ? target.hashCode() : 0;
-        result = 31 * result + (function != null ? function.hashCode() : 0);
+        int result = function != null ? function.hashCode() : 0;
         result = 31 * result + (condition != null ? condition.hashCode() : 0);
+        result = 31 * result + (backwards ? 1 : 0);
         return result;
     }
 

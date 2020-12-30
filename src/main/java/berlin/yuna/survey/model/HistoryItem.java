@@ -1,6 +1,6 @@
 package berlin.yuna.survey.model;
 
-import berlin.yuna.survey.model.types.QuestionGeneric;
+import berlin.yuna.survey.model.types.FlowItem;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -10,47 +10,39 @@ import java.util.Objects;
 public class HistoryItem implements Comparable<HistoryItem> {
     private String label;
     private Object answer;
-    private LocalDateTime answeredAt;
-    private boolean draft;
+    private LocalDateTime createdAt;
+    private State state = State.CURRENT;
 
     public HistoryItem() {
+        this.createdAt = LocalDateTime.now(ZoneId.of("UTC"));
     }
 
-    public HistoryItem(final String label, final Object answer, final boolean draft, final boolean isAnswered) {
-        this.label = label;
+    public HistoryItem(final String label, final Object answer, final State state) {
+        this(label);
         this.answer = answer;
-        this.answeredAt = isAnswered ? LocalDateTime.now(ZoneId.of("UTC")) : null;
-        this.draft = draft;
+        this.state = state;
     }
 
     public HistoryItem(final String label) {
+        this();
         this.label = label;
         this.answer = null;
-        this.answeredAt = null;
-        this.draft = true;
+        this.state = State.DRAFT;
     }
 
-    public HistoryItem(final HistoryItem answer, final boolean draft) {
-        this.label = answer.label;
-        this.answer = answer.answer;
-        this.answeredAt = answer.answeredAt;
-        this.draft = draft;
-    }
-
-    public void setLabel(String label) {
+    public HistoryItem setLabel(String label) {
         this.label = label;
+        return this;
     }
 
-    public void setAnswer(Object answer) {
+    public HistoryItem setAnswer(Object answer) {
         this.answer = answer;
+        return this;
     }
 
-    public void setAnsweredAt(LocalDateTime answeredAt) {
-        this.answeredAt = answeredAt;
-    }
-
-    public void setDraft(boolean draft) {
-        this.draft = draft;
+    public HistoryItem setCreatedAt(final LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+        return this;
     }
 
     public String getLabel() {
@@ -61,8 +53,17 @@ public class HistoryItem implements Comparable<HistoryItem> {
         return answer;
     }
 
-    public LocalDateTime getAnsweredAt() {
-        return answeredAt;
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public State getState() {
+        return state;
+    }
+
+    public HistoryItem setState(final State state) {
+        this.state = state;
+        return this;
     }
 
     public boolean isNotDraft() {
@@ -70,7 +71,15 @@ public class HistoryItem implements Comparable<HistoryItem> {
     }
 
     public boolean isDraft() {
-        return draft;
+        return state == State.DRAFT;
+    }
+
+    public boolean isNotCurrent() {
+        return !isCurrent();
+    }
+
+    public boolean isCurrent() {
+        return state == State.CURRENT;
     }
 
     public boolean isNotAnswered() {
@@ -78,10 +87,10 @@ public class HistoryItem implements Comparable<HistoryItem> {
     }
 
     public boolean isAnswered() {
-        return answeredAt != null;
+        return answer != null;
     }
 
-    public boolean match(final QuestionGeneric<?, ?> question) {
+    public boolean match(final FlowItem<?, ?> question) {
         return question != null && question.label().equals(label);
     }
 
@@ -105,19 +114,25 @@ public class HistoryItem implements Comparable<HistoryItem> {
         return "QuestionAnswer{" +
                 "label='" + label + '\'' +
                 ", answer='" + answer + '\'' +
-                ", answeredAt=" + answeredAt +
-                ", draft=" + draft +
+                ", createdAt=" + createdAt +
+                ", state='" + state + '\'' +
                 '}';
     }
 
     @Override
     public int compareTo(final HistoryItem o) {
-        if (o.getAnsweredAt() == null) {
+        if (o.getCreatedAt() == null) {
             return 1;
-        } else if (getAnsweredAt() == null) {
+        } else if (getCreatedAt() == null) {
             return -1;
         } else {
-            return (o.getAnsweredAt().compareTo(getAnsweredAt()));
+            return (o.getCreatedAt().compareTo(getCreatedAt()));
         }
+    }
+
+    public enum State {
+        ANSWERED,
+        CURRENT,
+        DRAFT,
     }
 }
