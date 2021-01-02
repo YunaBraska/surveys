@@ -2,16 +2,19 @@ package berlin.yuna.survey.logic;
 
 import berlin.yuna.survey.model.DiagramConfig;
 import berlin.yuna.survey.model.DiagramConfig.ElementType;
-import berlin.yuna.survey.model.HistoryItem;
+import berlin.yuna.survey.model.HistoryItemBase;
 import berlin.yuna.survey.model.Route;
 import berlin.yuna.survey.model.types.FlowItem;
 import berlin.yuna.survey.model.types.simple.Question;
+import guru.nidi.graphviz.attribute.Arrow;
 import guru.nidi.graphviz.attribute.Attributes;
 import guru.nidi.graphviz.attribute.Color;
+import guru.nidi.graphviz.attribute.Font;
 import guru.nidi.graphviz.attribute.ForNode;
 import guru.nidi.graphviz.attribute.Label;
 import guru.nidi.graphviz.attribute.Rank;
 import guru.nidi.graphviz.attribute.Shape;
+import guru.nidi.graphviz.attribute.Style;
 import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
 import guru.nidi.graphviz.model.Link;
@@ -23,23 +26,27 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
+import static berlin.yuna.survey.logic.CommonUtils.hasText;
+import static berlin.yuna.survey.logic.CommonUtils.toText;
+import static berlin.yuna.survey.model.DiagramConfig.ElementType.DEFAULT;
 import static berlin.yuna.survey.model.DiagramConfig.ElementType.ITEM_ANSWERED;
 import static berlin.yuna.survey.model.DiagramConfig.ElementType.ITEM_CHOICE;
 import static berlin.yuna.survey.model.DiagramConfig.ElementType.ITEM_CURRENT;
-import static berlin.yuna.survey.model.DiagramConfig.ElementType.ITEM_DEFAULT;
 import static berlin.yuna.survey.model.DiagramConfig.ElementType.ITEM_DRAFT;
 import static berlin.yuna.survey.model.DiagramConfig.toKey;
 import static guru.nidi.graphviz.model.Factory.graph;
 import static guru.nidi.graphviz.model.Factory.mutNode;
 import static guru.nidi.graphviz.model.Link.to;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public class DiagramExporter {
 
     private static final String SUFFIX_CHOICE = "_CHOICE";
-    private DiagramConfig config = new DiagramConfig();
+    private DiagramConfig config = new DiagramConfig(this);
     //TMP used for rendering
     private final Survey survey;
     private final Set<String> links = new HashSet<>();
@@ -49,7 +56,6 @@ public class DiagramExporter {
     public static final String CONFIG_KEY_CLASS = "x_class";
     public static final String CONFIG_KEY_SOURCE = "x_source";
     public static final String CONFIG_KEY_TARGET = "x_target";
-    public static final String CONFIG_KEY_IGNORE = "x_ignore";
     public static final String CONFIG_KEY_CONDITION = "x_condition";
 
     public DiagramExporter(final Survey survey) {
@@ -90,8 +96,8 @@ public class DiagramExporter {
         this.config = config;
     }
 
-    public static boolean isChoice(final MutableNode node) {
-        return Boolean.parseBoolean(String.valueOf(node.get(CONFIG_KEY_IGNORE)));
+    public Survey survey() {
+        return survey;
     }
 
     private static File getFile(final File output, final Format format) throws IOException {
@@ -108,7 +114,7 @@ public class DiagramExporter {
         links.clear();
         nodes.clear();
         final FlowItem<?, ?> first = survey.getFirst();
-        addLeave(first, first.routes());
+        addLeave(first, first.transitions().forwardRoutes());
         return getNode(first);
     }
 
@@ -116,36 +122,73 @@ public class DiagramExporter {
         routes.forEach(route -> {
             final FlowItem<?, ?> current = route.target();
             //STOP ENDLESS CIRCULATION
-            if (link(previous, route)) {
+            if (link(previous, route, true)) {
                 //CHOICE
                 if (current.targets().size() > 1 && config.getOrDefault(ITEM_CHOICE, CONFIG_KEY_SHAPE, Shape.NONE) != Shape.NONE) {
-                    final String id = survey.getHistory().stream().filter(item -> !survey.get().match(item)).filter(item -> current.targets().stream().anyMatch(item::match)).findFirst().map(HistoryItem::getLabel).orElse(current.label() + SUFFIX_CHOICE);
+                    final String id = survey.getHistory().stream().filter(item -> !survey.get().match(item)).filter(item -> current.targets().stream().anyMatch(item::match)).findFirst().map(HistoryItemBase::getLabel).orElse(current.label() + SUFFIX_CHOICE);
                     final Question option = Question.of(current.label() + SUFFIX_CHOICE);
                     getNode(ITEM_CHOICE, option, id);
-                    link(current, new Route<>(option, null, null, false));
-                    addLeave(option, current.routes());
+                    link(current, new Route<>(option, null, null, false), false);
+                    addLeave(option, current.transitions().forwardRoutes());
                 } else {
-                    addLeave(current, current.routes());
+                    addLeave(current, current.transitions().forwardRoutes());
                 }
             }
+            createBackTransitionLinks(previous, current);
         });
     }
 
-    private boolean link(final FlowItem<?, ?> first, final Route<?> route) {
+    private boolean link(final FlowItem<?, ?> first, final Route<?> route, final boolean metaAttributes) {
         final MutableNode firstNode = getNode(first);
         final MutableNode secondNode = getNode(route.target());
-        final String id = first.label() + " -> " + route.target().label();
+        final String id = first.label() + " -> " + route.target().label() + " " + route.isBackwardFlow();
         if (!links.contains(id)) {
-            final Link link = to(secondNode).with(getLinkColor(firstNode, secondNode)).with(toLabel(route.getLabel()));
-            if (!isChoice(secondNode)) {
-                firstNode.addLink(link
-                        .with(CONFIG_KEY_SOURCE, isChoice(firstNode) ? removeChoice(first.label()) : first.label())
-                        .with(CONFIG_KEY_TARGET, route.target().label())
-                        .with(CONFIG_KEY_CONDITION, getConditionName(route))
-                );
-            } else {
-                firstNode.addLink(link);
+            final AtomicReference<Link> newLink = new AtomicReference<>(to(secondNode).add(getLinkColor(firstNode,
+                    secondNode)));
+            if (hasText(route.getLabel())) {
+                newLink.get().add(Font.name("helvetica")).add(toLabel(route.getLabel()));
             }
+
+            if (metaAttributes) {
+                newLink.set(newLink.get()
+                        .with(CONFIG_KEY_TARGET, route.isBackwardFlow() ? Label.of("") : route.target().label()));
+                toText(firstNode.get(CONFIG_KEY_SOURCE)).ifPresentOrElse(
+                        source -> newLink.set(newLink.get().with(CONFIG_KEY_SOURCE, source)),
+                        () -> newLink.set(newLink.get().with(CONFIG_KEY_SOURCE, removeChoice(first.label())))
+                );
+                toText(getConditionString(route)).ifPresent(condition -> newLink.set(newLink.get().with(CONFIG_KEY_CONDITION, condition)));
+            }
+
+            //TODO styling links
+            if (route.isBackwardFlow()) {
+                newLink.get().add(Color.ANTIQUEWHITE)
+                        .add(Style.DASHED)
+                        .add(Arrow.EMPTY);
+            }
+
+//            final AtomicReference<Link> link = new AtomicReference<>(to(secondNode)
+//                    .add(getLinkColor(firstNode, secondNode))
+//                    .add(Font.name("helvetica"))
+//                    .add(toLabel(route.getLabel())));
+//            if (!isChoice(secondNode)) {
+//                link.set(link.get()
+//                        .with(CONFIG_KEY_SOURCE, isChoice(firstNode) ? removeChoice(first.label()) : first.label())
+//                        .with(CONFIG_KEY_TARGET, route.isBackwardFlow() ? Label.of("") : route.target().label())
+//                );
+//            }
+//
+//            final String backConditions = getConditionName(route);
+//            if (backConditions.length() > 1) {
+//                link.set(link.get().with(CONFIG_KEY_CONDITION, backConditions));
+//            }
+//            if (route.isBackwardFlow()) {
+//                link.set(link.get()
+//                        .with(Color.ANTIQUEWHITE)
+//                        .with(Style.DASHED)
+//                        .with(Arrow.EMPTY)
+//                );
+//            }
+            firstNode.addLink(newLink.get());
             links.add(id);
             return true;
         }
@@ -156,14 +199,14 @@ public class DiagramExporter {
         return Label.of(label == null ? "" : label);
     }
 
-    private String getConditionName(final Route<?> route) {
-        return route.hasChoice() ? route.getCondition().getClass().getSimpleName() : "";
+    private String getConditionString(final Route<?> route) {
+        return route.hasCondition() ? route.getCondition().getClass().getSimpleName() : "";
     }
 
     private Color getLinkColor(final MutableNode first, final MutableNode second) {
         final String c1 = Color.named(String.valueOf(first.attrs().get(CONFIG_KEY_COLOR))).value;
         final Color c2 = Color.named(String.valueOf(second.attrs().get(CONFIG_KEY_COLOR)));
-        final Color defaultColor = ((Color) config.getOrDefault(ITEM_DEFAULT, CONFIG_KEY_COLOR, Color.BLACK));
+        final Color defaultColor = ((Color) config.getOrDefault(DEFAULT, CONFIG_KEY_COLOR, Color.BLACK));
         if (!defaultColor.value.equals(c1) && !defaultColor.value.equals(c2.value)) {
             return c2;
         } else {
@@ -172,7 +215,7 @@ public class DiagramExporter {
     }
 
     private MutableNode getNode(final FlowItem<?, ?> flowItem) {
-        return getNode(ITEM_DEFAULT, flowItem, flowItem.label());
+        return getNode(DEFAULT, flowItem, flowItem.label());
     }
 
     private MutableNode getNode(final ElementType type, final FlowItem<?, ?> flowItem, final String id) {
@@ -180,10 +223,13 @@ public class DiagramExporter {
             final MutableNode result = mutNode(flowItem.label());
             config.get(type).stream().filter(attr -> !requireNonNull(CONFIG_KEY_COLOR).equals(toKey(attr))).forEach(result::add);
             result.add(getColorFromHistory(id));
-            result.add(CONFIG_KEY_CLASS, flowItem.getClass().getSimpleName());
-            result.add(CONFIG_KEY_SOURCE, type == ITEM_CHOICE ? removeChoice(flowItem.label()) : flowItem.label());
-            if (type == ITEM_CHOICE) {
-                result.add(CONFIG_KEY_IGNORE, true);
+            if (type != ITEM_CHOICE) {
+                final String backConditions = exportBackConditions(flowItem);
+                result.add(CONFIG_KEY_CLASS, flowItem.getClass().getSimpleName());
+                result.add(CONFIG_KEY_SOURCE, flowItem.label());
+                if (backConditions.length() > 1) {
+                    result.add(CONFIG_KEY_CONDITION, backConditions);
+                }
             }
             return result;
         });
@@ -205,8 +251,23 @@ public class DiagramExporter {
                     } else if (item.isAnswered()) {
                         return config.get(ITEM_ANSWERED, CONFIG_KEY_COLOR);
                     } else {
-                        return config.get(ITEM_DEFAULT, CONFIG_KEY_COLOR);
+                        return config.get(DEFAULT, CONFIG_KEY_COLOR);
                     }
-                }).orElse(config.get(ITEM_DEFAULT, CONFIG_KEY_COLOR)).orElse(Color.BLACK);
+                }).orElse(config.get(DEFAULT, CONFIG_KEY_COLOR)).orElse(Color.BLACK);
+    }
+
+    private void createBackTransitionLinks(final FlowItem<?, ?> previous, final FlowItem<?, ?> current) {
+        if (config.showBackTransition()) {
+            current.transitions().backwardRoutes().forEach(back -> link(current, new Route<>(previous, null, back.getCondition(), true), true));
+            if (survey.hasAutoBackTransition()) {
+                current.parents().forEach(parent -> link(current, new Route<>(parent, null, null, true), false));
+            }
+        }
+    }
+
+    private String exportBackConditions(final FlowItem<?, ?> flowItem) {
+        return flowItem.transitions().backwardRoutes().stream()
+                .filter(Route::hasCondition)
+                .map(route -> route.getCondition().getClass().getSimpleName()).collect(joining(","));
     }
 }

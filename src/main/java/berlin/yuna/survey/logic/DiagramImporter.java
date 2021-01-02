@@ -16,13 +16,15 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Stream;
 
+import static berlin.yuna.survey.logic.CommonUtils.hasText;
 import static berlin.yuna.survey.logic.DiagramExporter.CONFIG_KEY_CLASS;
 import static berlin.yuna.survey.logic.DiagramExporter.CONFIG_KEY_CONDITION;
 import static berlin.yuna.survey.logic.DiagramExporter.CONFIG_KEY_SOURCE;
 import static berlin.yuna.survey.logic.DiagramExporter.CONFIG_KEY_TARGET;
-import static berlin.yuna.survey.logic.DiagramExporter.isChoice;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toMap;
 
@@ -69,11 +71,10 @@ public class DiagramImporter {
 
     private void addTargets(final Map<String, FlowItem<?, ?>> flowItems, final MutableNode node) {
         node.links().forEach(link -> {
-            final String source = (String) link.get(CONFIG_KEY_SOURCE);
-            final String target = (String) link.get(CONFIG_KEY_TARGET);
-            final FlowItem<?, ?> flowItem = flowItems.get(source);
+            final FlowItem<?, ?> source = flowItems.get((String) link.get(CONFIG_KEY_SOURCE));
+            final FlowItem<?, ?> target = flowItems.get((String) link.get(CONFIG_KEY_TARGET));
             if (source != null && target != null) {
-                flowItem.target(flowItems.get(target), getConditionByName((String) link.get(CONFIG_KEY_CONDITION)));
+                source.target(target, getConditionsByName(link.get(CONFIG_KEY_CONDITION)).findFirst().orElse(null));
             }
         });
 
@@ -87,7 +88,11 @@ public class DiagramImporter {
         return choiceRegister;
     }
 
-    private Class<? extends Condition<?>> getConditionByName(final String name) {
+    private Stream<? extends Class<? extends Condition<?>>> getConditionsByName(final Object name) {
+        return name == null ? Stream.empty() : stream(((String) name).split(",")).map(this::toCondition).filter(Objects::nonNull);
+    }
+
+    private Class<? extends Condition<?>> toCondition(final String name) {
         return name == null || name.trim().isEmpty() ? null :
                 choiceRegister.stream().filter(c -> nameEqualsClass(name, c)).findFirst().orElseThrow(() ->
                         new FlowImportException(null, null, "Condition [" + name + "] found, please register first")
@@ -95,21 +100,26 @@ public class DiagramImporter {
     }
 
     //TODO more matching cases like by label, replace spaces,...
-    private boolean nameEqualsClass(String name, Class<? extends Condition<?>> c) {
-        return c.getSimpleName().equalsIgnoreCase(name.trim().replace(" ", ""));
+    private boolean nameEqualsClass(final String name, Class<? extends Condition<?>> c) {
+        final String importName = name.trim().replace(" ", "");
+        return c.getSimpleName().equalsIgnoreCase(importName)
+                || c.getCanonicalName().equalsIgnoreCase(importName);
     }
 
     private Map<String, FlowItem<?, ?>> toFlowItems(final MutableGraph graph) {
-        return graph.nodes().stream().filter(node -> !isChoice(node)).collect(toMap(node -> (String) node.get(CONFIG_KEY_SOURCE), this::toFlowItem));
+        return graph.nodes().stream().filter(node -> hasText(node.get(CONFIG_KEY_CLASS))).collect(toMap(node -> (String) node.get(CONFIG_KEY_SOURCE), this::toFlowItem));
     }
 
+    @SuppressWarnings("unchecked")
     private FlowItem<?, ?> toFlowItem(final MutableNode node) {
         final String type = (String) node.get(CONFIG_KEY_CLASS);
         final String label = (String) node.get(CONFIG_KEY_SOURCE);
         try {
-            return flowRegister.stream().filter(clazz -> clazz.getSimpleName().equals(type)).findFirst()
+            FlowItem<?, ?> flowItem = flowRegister.stream().filter(clazz -> clazz.getSimpleName().equals(type)).findFirst()
                     .orElseThrow(() -> new FlowImportException(null, label, "No class registered for type [" + type + "]"))
                     .getConstructor(String.class).newInstance(label);
+            getConditionsByName(node.get(CONFIG_KEY_CONDITION)).forEach(flowItem::onBack);
+            return flowItem;
         } catch (NoSuchMethodException e) {
             throw new FlowRuntimeException(label, null, "Constructor not found for [" + type + "]", e);
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {

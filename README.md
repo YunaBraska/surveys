@@ -1,7 +1,7 @@
 # Surveys
 
 Surveys is a plain java library to provide a base for nested questionnaires. It also provides a function
-to [generate diagrams](#diagram-example) and to [measure answer times](#answer-duration-metrics).
+to [generate and import diagrams](#diagram-example) using [graphviz-java](https://github.com/nidi3/graphviz-java) and to [measure answer times](#answer-duration-metrics).
 
 [![Build][build_shield]][build_link]
 [![Maintainable][maintainable_shield]][maintainable_link]
@@ -21,11 +21,11 @@ to [generate diagrams](#diagram-example) and to [measure answer times](#answer-d
     * [Requirements](#requirements)
     * [Diagram example](#diagram-example)
     * [Data Structure](#data-structure)
-* [Question](https://github.com/YunaBraska/surveys/blob/master/src/main/java/berlin/yuna/survey/model/types/FlowItem.java) usage \[Flow definition\]
+* [Flow](https://github.com/YunaBraska/surveys/blob/master/src/main/java/berlin/yuna/survey/model/types/FlowItem.java) usage \[Flow definition\]
     * [Define a flow](#define-a-flow)
     * [Define a flow condition](#define-a-condition)
     * [Define custom condition](#define-custom-condition)
-    * [Define custom question](#define-custom-question)
+    * [Define custom FlowItem](#define-custom-flowitem)
     * [Define-a-Back-Event/Condition](#define-a-back-event-with-condition)
     * [Disable back transitions without conditions](#disable-back-transitions-without-condition)
 * [Survey](https://github.com/YunaBraska/surveys/blob/master/src/main/java/berlin/yuna/survey/logic/Survey.java) usage \[answers, history, transitions\]
@@ -51,17 +51,17 @@ to [generate diagrams](#diagram-example) and to [measure answer times](#answer-d
 
 The goal of this project was to build a simple, solid core workflow/state machine library with a minimalistic style. 
 Means everyone can build easily on top of it while providing already basic functions like import/export diagrams. 
-A survey is easy to store in a database and to modify as its just a simple ordered list.
+A survey is easy to modify and store in a database as its just a simple ordered list.
 
 ### Requirements
-* It's needed to install the library `graphviz` e.g. `brew install graphviz`, `sudo apt-get install graphviz` for rendering diagrams as [graphviz-java](https://github.com/nidi3/graphviz-java) is used
+* Library `graphviz` (e.g. `brew install graphviz`, `sudo apt-get install graphviz`) is needed for import and export diagrams. ([graphviz-java](https://github.com/nidi3/graphviz-java) is used)
 
 ### Diagram example
 On this example:
 * Green = Answered
 * Orange = Current
 * Blue = Transitioned back path
-![Diagram example](src/test/resources/diagram_example.png)
+![Diagram example](src/test/resources/diagram_example.svg)
 
 ### Data Structure
 ![Diagram example](src/test/resources/structure.png)
@@ -80,18 +80,19 @@ On this example:
 
 ```java
   QuestionBool flow =  QuestionBool.of("START");
-        start.target(Question.of("OPTION_01"),answer->answer==true);
-        start.target(Question.of("OPTION_02"),new MyConditionService());
+        flow.target(Question.of("OPTION_01"), answer->answer==true);
+        flow.target(Question.of("OPTION_02"), new MyCondition());
 ```
 
 #### Define a back event with condition
 
-* Back events are functions which will be triggered on any back transition which needs to step over the associated
-  question
-* Back conditions can block the backward transitions (Not implemented)
+* Back events are functions. They will be triggered on any back transition which needs to step over an associated FlowItem
+* Back conditions can block the backward transitions
 
 ```java
-    Question flow = Question.of("Q1").onBack(oldAnswer-> myOnBackFunction());
+    Question flow = Question.of("Q1");
+        flow.onBack(answer->answer==true);
+        flow.onBack(new MyCondition());
 ```
 
 #### Define custom condition
@@ -112,12 +113,12 @@ public class CustomChoice extends Choice<String> {
 }
 ```
 
-#### Define custom question
+#### Define custom flowItem
 
 ```java
 import java.util.Optional;
 
-public class MyQuestion extends FlowItem<Boolean, MyQuestion> {
+public class MyFlowItem extends FlowItem<Boolean, MyFlowItem> {
 
     //Parse answer to defined type which will be used to match a condition
     @Override
@@ -143,7 +144,7 @@ public class MyQuestion extends FlowItem<Boolean, MyQuestion> {
 
 #### Answer a survey
 
-* Surveys answers always the current question in the flow
+* Surveys answers always the current FlowItem in the flow
 
 ```java
     Question flow = Question.of(Q1).target(Question.of(Q2));
@@ -160,6 +161,7 @@ public class MyQuestion extends FlowItem<Boolean, MyQuestion> {
 ```java
         Survey survey = Survey.init(Question.of(MYFLOW));
         List<HistoryItem> history = survey.getHistory(); //The order is important - time is UTC
+        List<HistoryItemJson> history = survey.getHistoryJson(); //converts answers to json for easier database storage
 
 ```
 
@@ -215,7 +217,9 @@ public class MyQuestion extends FlowItem<Boolean, MyQuestion> {
 * Graphviz diagram Attributes (e.g. Color, Shape,...) can additionally for each ElementType \[ITEM_DRAFT, ITEM_CHOICE, ITEM_CURRENT, ITEM_ANSWERED, ITEM_DEFAULT\]                                                
 ```java
     final DiagramExporter exporter = survey.diagram();
-    exporter.config().add(ITEM_CURRENT, Color.RED).add(ITEM_ANSWERED, Shape.START);
+    exporter.config()
+        .add(ITEM_CURRENT, Color.RED)
+        .add(ITEM_ANSWERED, Shape.START);
 ```
 #### Disable autogenerated choice
 * Disable autogenerated choice elements
@@ -235,21 +239,22 @@ public class MyQuestion extends FlowItem<Boolean, MyQuestion> {
 #### Import from a diagram 
 * Format must be [DOT](https://en.wikipedia.org/wiki/DOT_(graph_description_language))
 * Import can be imported by \[File, String, InputStream, MutableGraph\]
-* Its required to define possible flowItems (Child's of FlowItem) and conditions (Child' of Condition) since the library doesn't use reflections yet
+* Its required to define possible flowItems (Child's of FlowItem) and conditions (Child' of Condition) since the library doesn't use reflections (except of the export to json function)
 ```java
     final FlowItem<?,?> flow = new DiagramImporter().read(file)
 ```
 
 #### Create a diagram manually
 * Diagrams can be manually created like with [GraphvizOnline](https://dreampuf.github.io/GraphvizOnline)
-* To detect the FlowItems and Conditions, it's important to add some Attributes
+* To detect the FlowItems and Conditions, it's important to add meta attributes
 * Link Attributes
     * `DiagramExporter.CONFIG_KEY_SOURCE` = configures the "from" flowItem
     * `DiagramExporter.CONFIG_KEY_TARGET` = configures the "to" flowItem
-* Element Attributes
+    * `DiagramExporter.CONFIG_KEY_CONDITION` = Condition class name
+* Element/Node Attributes
     * `DiagramExporter.CONFIG_KEY_SOURCE` = Label for flowItem
-    * `DiagramExporter.CONFIG_KEY_CLASS` = Class name for type of flowItem
-    * `DiagramExporter.CONFIG_KEY_IGNORE` = (Optional) Used for extra not relevant flowItems like choice elements
+    * `DiagramExporter.CONFIG_KEY_CLASS` = FlowItem class name
+    * `DiagramExporter.CONFIG_KEY_CONDITION` = Comma separated list of condition class names for back transitions
 
 ### Full example
 
@@ -311,13 +316,13 @@ class SurveyExampleTest {
 ### TODOs
 
 * [ ] Core: Implement custom exceptions
+* [ ] Feature: Custom error handler concept
 * [ ] Feature: Implement context for conditions
 * [ ] Feature: Add More question examples like radio, checkbox, list, map,...
 * [ ] Feature: Implement groups of questions and answers?
 * [ ] Diagram: Generate heat map from List of Surveys for e.g. most, longest, never taken answers
-* [ ] Diagram: Show possible back transitions
+* [ ] Diagram: Custom styling also for links
 * [ ] Diagram: Import / Export from UML
-* [ ] Diagram: Import without attributes configurable by element type? && somehow configurable conditions by link label? 
 
 [build_shield]: https://github.com/YunaBraska/surveys/workflows/JAVA_CI/badge.svg
 [build_link]: https://github.com/YunaBraska/surveys/actions?query=workflow%3AJAVA_CI

@@ -1,8 +1,6 @@
 package berlin.yuna.survey.model.types.simple;
 
 import berlin.yuna.survey.model.types.FlowItem;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.Collection;
@@ -10,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static berlin.yuna.survey.config.SurveyDefaults.surveyMapper;
 import static java.util.Arrays.stream;
 
 public class QuestionList extends FlowItem<Collection<String>, QuestionList> {
@@ -35,10 +34,8 @@ public class QuestionList extends FlowItem<Collection<String>, QuestionList> {
         return Optional.empty();
     }
 
-    private <T> Optional<Collection<T>> collectionOf(final String object, Class<T> type) {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        mapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
+    private <T> Optional<Collection<T>> collectionOf(final String object, final Class<T> type) {
+        ObjectMapper mapper = surveyMapper();
         return mapper.convertValue(object, mapper.getTypeFactory().constructCollectionType(List.class, type));
     }
 

@@ -17,6 +17,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 
+import static berlin.yuna.survey.logic.DiagramExporterIntegrationTest.Q3;
 import static berlin.yuna.survey.logic.DiagramExporterIntegrationTest.createDiagramSurvey;
 import static berlin.yuna.survey.model.DiagramConfig.ElementType.ITEM_CHOICE;
 import static java.io.File.createTempFile;
@@ -41,9 +42,7 @@ class DiagramImporterTest {
         for (int i = 0; i < 4; i++) {
             final File exported = diagramExporter.save(createTempFile("diagram_" + i + "_", "." + Format.DOT.fileExtension), Format.DOT);
             diagramExporter.save(createTempFile("diagram_" + i + "_", "." + Format.PNG.fileExtension), Format.PNG);
-            survey = Survey.init(flowImporter.read(exported));
-            assertThat(exported.exists(), is(true));
-            assertThat((int) exported.length(), is(greaterThan(0)));
+            survey = validateAndReturn(survey, exported, Survey.init(flowImporter.read(exported)));
         }
     }
 
@@ -51,15 +50,25 @@ class DiagramImporterTest {
     @DisplayName("Export / Import without choice")
     void importDiagramWithoutChoice() throws IOException {
         Survey survey = createDiagramSurvey();
-        final DiagramExporter diagramExporter = survey.diagram();
-        diagramExporter.config().add(ITEM_CHOICE, Shape.NONE);
+        final DiagramExporter diagramExporter = survey.diagram().config().add(ITEM_CHOICE, Shape.NONE).exporter();
         final DiagramImporter flowImporter = new DiagramImporter();
         for (int i = 0; i < 4; i++) {
             final File exported = diagramExporter.save(createTempFile("diagram_" + i + "_", "." + Format.DOT.fileExtension), Format.DOT);
             diagramExporter.save(createTempFile("diagram_" + i + "_", "." + Format.PNG.fileExtension), Format.PNG);
-            survey = Survey.init(flowImporter.read(exported));
-            assertThat(exported.exists(), is(true));
-            assertThat((int) exported.length(), is(greaterThan(0)));
+            survey = validateAndReturn(survey, exported, Survey.init(flowImporter.read(exported)));
+        }
+    }
+
+    @Test
+    @DisplayName("Export / Import with back transitions")
+    void importDiagramWithBackTransitions() throws IOException {
+        Survey survey = createDiagramSurvey();
+        final DiagramExporter diagramExporter = survey.diagram().config().showBackTransition(true).exporter();
+        final DiagramImporter flowImporter = new DiagramImporter();
+        for (int i = 0; i < 4; i++) {
+            final File exported = diagramExporter.save(createTempFile("diagram_" + i + "_", "." + Format.DOT.fileExtension), Format.DOT);
+            diagramExporter.save(createTempFile("diagram_" + i + "_", "." + Format.PNG.fileExtension), Format.PNG);
+            survey = validateAndReturn(survey, exported, Survey.init(flowImporter.read(exported)));
         }
     }
 
@@ -106,5 +115,14 @@ class DiagramImporterTest {
     void registerCheck() {
         assertThat(new DiagramImporter().flowRegister(), is(not(empty())));
         assertThat(new DiagramImporter().choiceRegister(), is(not(empty())));
+    }
+
+    private Survey validateAndReturn(final Survey survey, final File exported, final Survey imported) {
+        assertThat(exported.exists(), is(true));
+        assertThat((int) exported.length(), is(greaterThan(0)));
+        assertThat(imported.getFirst(), is(equalTo(survey.getFirst())));
+        assertThat(imported.get(Q3), is(equalTo(survey.get(Q3))));
+        assertThat(imported.get(Q3).transitions().size(), is(equalTo(survey.get(Q3).transitions().size())));
+        return imported;
     }
 }

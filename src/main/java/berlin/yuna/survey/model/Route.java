@@ -6,7 +6,7 @@ import java.util.Objects;
 import java.util.function.Function;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
-public class Route<T> {
+public class Route<T> implements Comparable<Route<?>>{
     private final FlowItem<?, ?> target;
     private final Function<T, Boolean> function;
     private final Condition<T> condition;
@@ -20,10 +20,10 @@ public class Route<T> {
     }
 
     public boolean apply(T answer) {
-        return (hasChoice() && condition.apply(answer)) || (hasFunction() && function.apply(answer));
+        return (hasCondition() && condition.apply(answer)) || (hasFunction() && function.apply(answer));
     }
 
-    public boolean hasChoice() {
+    public boolean hasCondition() {
         return condition != null;
     }
 
@@ -35,16 +35,16 @@ public class Route<T> {
         return function != null;
     }
 
-    public boolean hasCondition() {
-        return hasChoice() || hasFunction();
+    public boolean hasAnyCondition() {
+        return hasCondition() || hasFunction();
     }
 
     public boolean hasNoCondition() {
-        return !hasCondition();
+        return !hasAnyCondition();
     }
 
     public String getLabel() {
-        return hasChoice() ? (condition.getLabel() != null ? condition.getLabel() : condition.getClass().getSimpleName()) : null;
+        return hasCondition() ? (condition.getLabel() != null ? condition.getLabel() : condition.getClass().getSimpleName()) : null;
     }
 
     public FlowItem<?, ?> target() {
@@ -89,6 +89,12 @@ public class Route<T> {
                 "target=" + target +
                 ", function=" + function +
                 ", choice=" + getLabel() +
+                ", backwards=" + backwards +
                 '}';
+    }
+
+    @Override
+    public int compareTo(final Route<?> route) {
+        return Boolean.compare(backwards, route.backwards);
     }
 }

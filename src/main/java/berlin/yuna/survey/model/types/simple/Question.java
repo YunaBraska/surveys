@@ -1,11 +1,13 @@
 package berlin.yuna.survey.model.types.simple;
 
 import berlin.yuna.survey.model.types.FlowItem;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 import java.util.Optional;
 
-public class Question extends FlowItem<String, Question> {
+import static berlin.yuna.survey.config.SurveyDefaults.surveyMapper;
 
+public class Question extends FlowItem<String, Question> {
 
     @Override
     public Optional<String> parse(final Object answer) {

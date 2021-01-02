@@ -2,6 +2,8 @@ package berlin.yuna.survey.example;
 
 import berlin.yuna.survey.logic.Survey;
 import berlin.yuna.survey.model.HistoryItem;
+import berlin.yuna.survey.model.HistoryItemBase;
+import berlin.yuna.survey.model.HistoryItemJson;
 import berlin.yuna.survey.model.types.simple.Question;
 import berlin.yuna.survey.model.types.simple.QuestionBool;
 import org.junit.jupiter.api.Tag;
@@ -46,9 +48,9 @@ class SurveyExampleTest {
         assertThat(survey01.answer("No").get(), is(equalTo(Question.of("Q1_FALSE"))));
 
         //EXPORT / IMPORT
-        List<HistoryItem> export = survey01.getHistory();
+        List<HistoryItemJson> export = survey01.getHistoryJson();
         final Survey survey02 = Survey.init(flow, export);
-        assertThat(export, is(equalTo(survey02.getHistory())));
+        assertThat(export, is(equalTo(survey02.getHistoryJson())));
         assertThat(survey02.get(), is(equalTo(survey01.get())));
         assertThat(survey02.answer("next").get(), is(equalTo(Question.of("Q2"))));
         assertThat(survey02.answer("next").get(), is(equalTo(Question.of("Q3"))));

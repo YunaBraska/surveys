@@ -1,7 +1,9 @@
 package berlin.yuna.survey.model;
 
+import berlin.yuna.survey.logic.DiagramExporter;
 import guru.nidi.graphviz.attribute.Attributes;
 import guru.nidi.graphviz.attribute.Color;
+import guru.nidi.graphviz.attribute.Font;
 import guru.nidi.graphviz.attribute.ForNode;
 import guru.nidi.graphviz.attribute.Rank;
 import guru.nidi.graphviz.attribute.Shape;
@@ -13,21 +15,24 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import static berlin.yuna.survey.model.DiagramConfig.ElementType.ITEM_DEFAULT;
+import static berlin.yuna.survey.model.DiagramConfig.ElementType.DEFAULT;
 
 public class DiagramConfig {
 
     private int width = -1;
     private int height = -1;
+    private boolean showBackTransition = false;
     private Rank.RankDir direction = Rank.RankDir.LEFT_TO_RIGHT;
-    private final EnumMap<ElementType, Set<Attributes<? extends ForNode>>> attributes = new EnumMap<>(ElementType.class);
+    private final EnumMap<ElementType, Set<Attributes<? extends ForNode>>> attributesNode = new EnumMap<>(ElementType.class);
+    private final DiagramExporter exporter;
 
-    public DiagramConfig() {
-        attributes.put(ElementType.ITEM_CHOICE, new HashSet<>(Set.of(Shape.OVAL)));
-        attributes.put(ElementType.ITEM_DRAFT, new HashSet<>(Set.of(Color.BLUE)));
-        attributes.put(ITEM_DEFAULT, new HashSet<>(Set.of(Shape.RECTANGLE, Color.BLACK)));
-        attributes.put(ElementType.ITEM_CURRENT, new HashSet<>(Set.of(Color.ORANGE)));
-        attributes.put(ElementType.ITEM_ANSWERED, new HashSet<>(Set.of(Color.GREEN)));
+    public DiagramConfig(final DiagramExporter exporter) {
+        attributesNode.put(ElementType.ITEM_CHOICE, new HashSet<>(Set.of(Shape.OVAL)));
+        attributesNode.put(ElementType.ITEM_DRAFT, new HashSet<>(Set.of(Color.BLUE)));
+        attributesNode.put(DEFAULT, new HashSet<>(Set.of(Shape.RECTANGLE, Color.BLACK, Font.name("helvetica"))));
+        attributesNode.put(ElementType.ITEM_CURRENT, new HashSet<>(Set.of(Color.ORANGE)));
+        attributesNode.put(ElementType.ITEM_ANSWERED, new HashSet<>(Set.of(Color.GREEN)));
+        this.exporter = exporter;
     }
 
     public enum ElementType {
@@ -35,7 +40,7 @@ public class DiagramConfig {
         ITEM_CHOICE,
         ITEM_CURRENT,
         ITEM_ANSWERED,
-        ITEM_DEFAULT,
+        DEFAULT,
     }
 
     public int width() {
@@ -65,8 +70,21 @@ public class DiagramConfig {
         return this;
     }
 
+    public boolean showBackTransition() {
+        return showBackTransition;
+    }
+
+    public DiagramConfig showBackTransition(boolean showBackTransition) {
+        this.showBackTransition = showBackTransition;
+        return this;
+    }
+
+    public DiagramExporter exporter() {
+        return exporter;
+    }
+
     public DiagramConfig add(final ElementType type, final Attributes<? extends ForNode> attribute) {
-        final Set<Attributes<? extends ForNode>> elementAttr = attributes.get(type);
+        final Set<Attributes<? extends ForNode>> elementAttr = attributesNode.get(type);
         final Optional<Attributes<? extends ForNode>> previousItem = get(type, toKey(attribute));
         previousItem.ifPresent(elementAttr::remove);
         elementAttr.add(attribute);
@@ -83,14 +101,14 @@ public class DiagramConfig {
     }
 
     public Optional<Attributes<? extends ForNode>> get(final ElementType type, final String key) {
-        return attributes.get(type).stream().filter(attr -> key.equals(toKey(attr))).findFirst()
-                .or(() -> type != ITEM_DEFAULT ? get(ITEM_DEFAULT, key) : Optional.empty());
+        return attributesNode.get(type).stream().filter(attr -> key.equals(toKey(attr))).findFirst()
+                .or(() -> type != DEFAULT ? get(DEFAULT, key) : Optional.empty());
     }
 
     public Set<Attributes<? extends ForNode>> get(final ElementType type) {
-        final Set<Attributes<? extends ForNode>> result = new HashSet<>(attributes.get(ITEM_DEFAULT));
-        result.removeAll(attributes.get(type));
-        result.addAll(attributes.get(type));
+        final Set<Attributes<? extends ForNode>> result = new HashSet<>(attributesNode.get(DEFAULT));
+        result.removeAll(attributesNode.get(type));
+        result.addAll(attributesNode.get(type));
         return result;
     }
 
