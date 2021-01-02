@@ -13,6 +13,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 import static berlin.yuna.survey.logic.SurveyTest.createSimpleSurvey;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
 
 @Tag("IntegrationTest")
 class DiagramExporterIntegrationTest {
@@ -27,16 +29,16 @@ class DiagramExporterIntegrationTest {
         for (Format format : Format.values()) {
             System.out.println(survey.diagram().save(format).toPath().toUri());
         }
-        final Path exampleOutput = Path.of(System.getProperty("user.dir"), "src/test/resources/diagram_example.png");
-        survey.diagram().save(exampleOutput.toFile(), Format.PNG);
+        final Path exampleOutput = Path.of(System.getProperty("user.dir"), "src/test/resources/diagram_example.svg");
+        survey.diagram().save(exampleOutput.toFile(), Format.SVG);
     }
 
     public static Survey createDiagramSurvey() {
-        Survey survey = createSimpleSurvey();
+        final Survey survey = createSimpleSurvey();
         survey.get(Question.of(Q1)).targetGet(survey.get(Q3), new CustomCondition());
         survey.get(Question.of(Q3)).target(Question.of(Q1), new CustomCondition2());
-        survey.get(Question.of(Q3)).target(Question.of(Q5), new CustomCondition4());
-        survey.answer("yes").answer("1").answer("1").transitTo("Q1");
+        survey.get(Question.of(Q3)).target(Question.of(Q5), new CustomCondition4()).onBack(new CustomCondition4(), new CustomCondition2());
+        assertThat(survey.answer("yes").answer("1").answer("4").transitTo("Q1"), is(true));
         return survey;
     }
 

@@ -87,13 +87,6 @@ class FlowItemTest {
     }
 
     @Test
-    @DisplayName("Answer")
-    void answer() {
-        assertThat(Question.of(Q1).answer(), is(equalTo(Optional.empty())));
-        assertThat(Question.of(Q1).target(Question.of(Q2)).answer(), is(equalTo(Optional.of(Question.of(Q2)))));
-    }
-
-    @Test
     @DisplayName("Parse answer")
     void parseAnswer() {
         assertThat(QuestionBool.of(Q1).parse("yes"), is(equalTo(Optional.of(true))));
@@ -137,8 +130,8 @@ class FlowItemTest {
     @Test
     @DisplayName("match SurveyAnswer")
     void match() {
-        assertThat(Question.of(Q1).match(new HistoryItem("Q1", null, HistoryItem.State.DRAFT)), is(true));
-        assertThat(Question.of(Q1).match(new HistoryItem("Q2", null, HistoryItem.State.DRAFT)), is(false));
+        assertThat(Question.of(Q1).match(new HistoryItem("Q1")), is(true));
+        assertThat(Question.of(Q1).match(new HistoryItem("Q2")), is(false));
     }
 
     @Test
@@ -164,7 +157,7 @@ class FlowItemTest {
         assertThat(route.target(), is(Question.of(Q1)));
         assertThat(route.getLabel(), is(customChoice.getLabel()));
         assertThat(route.equals(new Route<>(Question.of(Q1), null, customChoice, false)), is(true));
-        assertThat(route.toString(), is(containsString("AnswerRoute{target=Question{label='Q1'}")));
+        assertThat(route.toString(), is(containsString("AnswerRoute{target=FlowItem{label='Q1'}")));
     }
 
     @Test
@@ -209,6 +202,6 @@ class FlowItemTest {
     @Test
     @DisplayName("ToString [COV]")
     void toStringTest() {
-        assertThat(Question.of(Q1).toString(), is(equalTo("Question{label='Q1'}")));
+        assertThat(Question.of(Q1).toString(), is(equalTo("FlowItem{label='Q1'}")));
     }
 }

@@ -51,7 +51,7 @@ to [generate diagrams](#diagram-example) and to [measure answer times](#answer-d
 
 The goal of this project was to build a simple, solid core workflow/state machine library with a minimalistic style. 
 Means everyone can build easily on top of it while providing already basic functions like import/export diagrams. 
-A survey is easy to store in a database and to modify as its just a simple ordered list.
+A survey is easy to modify and store in a database as its just a simple ordered list.
 
 ### Requirements
 * It's needed to install the library `graphviz` e.g. `brew install graphviz`, `sudo apt-get install graphviz` for rendering diagrams as [graphviz-java](https://github.com/nidi3/graphviz-java) is used
@@ -61,7 +61,7 @@ On this example:
 * Green = Answered
 * Orange = Current
 * Blue = Transitioned back path
-![Diagram example](src/test/resources/diagram_example.png)
+![Diagram example](src/test/resources/diagram_example.svg)
 
 ### Data Structure
 ![Diagram example](src/test/resources/structure.png)
@@ -160,6 +160,7 @@ public class MyQuestion extends FlowItem<Boolean, MyQuestion> {
 ```java
         Survey survey = Survey.init(Question.of(MYFLOW));
         List<HistoryItem> history = survey.getHistory(); //The order is important - time is UTC
+        List<HistoryItemJson> history = survey.getHistoryJson(); //converts answers to json for easier database storage
 
 ```
 
@@ -235,21 +236,22 @@ public class MyQuestion extends FlowItem<Boolean, MyQuestion> {
 #### Import from a diagram 
 * Format must be [DOT](https://en.wikipedia.org/wiki/DOT_(graph_description_language))
 * Import can be imported by \[File, String, InputStream, MutableGraph\]
-* Its required to define possible flowItems (Child's of FlowItem) and conditions (Child' of Condition) since the library doesn't use reflections yet
+* Its required to define possible flowItems (Child's of FlowItem) and conditions (Child' of Condition) since the library doesn't use reflections (except of the export to json function)
 ```java
     final FlowItem<?,?> flow = new DiagramImporter().read(file)
 ```
 
 #### Create a diagram manually
 * Diagrams can be manually created like with [GraphvizOnline](https://dreampuf.github.io/GraphvizOnline)
-* To detect the FlowItems and Conditions, it's important to add some Attributes
+* To detect the FlowItems and Conditions, it's important to add meta attributes
 * Link Attributes
     * `DiagramExporter.CONFIG_KEY_SOURCE` = configures the "from" flowItem
     * `DiagramExporter.CONFIG_KEY_TARGET` = configures the "to" flowItem
-* Element Attributes
+    * `DiagramExporter.CONFIG_KEY_CONDITION` = Condition class name
+* Element/Node Attributes
     * `DiagramExporter.CONFIG_KEY_SOURCE` = Label for flowItem
-    * `DiagramExporter.CONFIG_KEY_CLASS` = Class name for type of flowItem
-    * `DiagramExporter.CONFIG_KEY_IGNORE` = (Optional) Used for extra not relevant flowItems like choice elements
+    * `DiagramExporter.CONFIG_KEY_CLASS` = Class name of flowItem type
+    * `DiagramExporter.CONFIG_KEY_CONDITION` = Comma separated list of conditions class names for back transitions
 
 ### Full example
 
@@ -311,13 +313,13 @@ class SurveyExampleTest {
 ### TODOs
 
 * [ ] Core: Implement custom exceptions
+* [ ] Feature: Custom error handler concept
 * [ ] Feature: Implement context for conditions
 * [ ] Feature: Add More question examples like radio, checkbox, list, map,...
 * [ ] Feature: Implement groups of questions and answers?
 * [ ] Diagram: Generate heat map from List of Surveys for e.g. most, longest, never taken answers
-* [ ] Diagram: Show possible back transitions
+* [ ] Diagram: Link styling
 * [ ] Diagram: Import / Export from UML
-* [ ] Diagram: Import without attributes configurable by element type? && somehow configurable conditions by link label? 
 
 [build_shield]: https://github.com/YunaBraska/surveys/workflows/JAVA_CI/badge.svg
 [build_link]: https://github.com/YunaBraska/surveys/actions?query=workflow%3AJAVA_CI

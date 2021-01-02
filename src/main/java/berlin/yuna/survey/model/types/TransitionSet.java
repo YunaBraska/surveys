@@ -5,6 +5,7 @@ import berlin.yuna.survey.model.Route;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -88,7 +89,7 @@ public class TransitionSet<T> extends HashSet<Route<T>> {
 
         TransitionSet<?> that = (TransitionSet<?>) o;
 
-        return flowItem != null ? flowItem.equals(that.flowItem) : that.flowItem == null;
+        return Objects.equals(flowItem, that.flowItem);
     }
 
     @Override

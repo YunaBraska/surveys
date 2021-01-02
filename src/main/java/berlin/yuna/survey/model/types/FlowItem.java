@@ -4,18 +4,30 @@ import berlin.yuna.survey.logic.DiagramExporter;
 import berlin.yuna.survey.logic.Survey;
 import berlin.yuna.survey.model.Condition;
 import berlin.yuna.survey.model.HistoryItem;
+import berlin.yuna.survey.model.HistoryItemBase;
 import berlin.yuna.survey.model.Route;
+import berlin.yuna.survey.model.SupplierThrowable;
 import berlin.yuna.survey.model.exception.FlowRuntimeException;
+import berlin.yuna.survey.model.exception.NotJsonPersonableType;
 import berlin.yuna.survey.model.exception.QuestionTypeException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static berlin.yuna.survey.config.SurveyDefaults.surveyMapper;
+import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.toSet;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public abstract class FlowItem<T, C extends FlowItem<T, C>> implements Comparable<FlowItem<?, ?>> {
@@ -102,6 +114,7 @@ public abstract class FlowItem<T, C extends FlowItem<T, C>> implements Comparabl
 
     /**
      * Defines a transition target of {@link FlowItem#targets()}
+     * A previous target without conditions will be overwritten
      *
      * @param target defines the transition target
      * @return returns the current object
@@ -116,7 +129,7 @@ public abstract class FlowItem<T, C extends FlowItem<T, C>> implements Comparabl
      * Defines a transition target of {@link FlowItem#targets()}
      *
      * @param target    defines the transition target
-     * @param condition {@code condition} which to match. On {@code true} will execute the transition - Conditions
+     * @param condition {@code condition} to match. On {@code true} will execute the transition - Conditions
      *                  can be also used to trigger a process
      * @return returns the current object
      */
@@ -130,7 +143,7 @@ public abstract class FlowItem<T, C extends FlowItem<T, C>> implements Comparabl
      * Defines a transition target of {@link FlowItem#targets()}
      *
      * @param target    defines the transition target
-     * @param condition {@code condition} which to match. On {@code true} will execute the transition - Conditions
+     * @param condition {@code condition} to match. On {@code true} will execute the transition - Conditions
      *                  can be also used to trigger a process
      * @return returns the current object
      */
@@ -144,7 +157,7 @@ public abstract class FlowItem<T, C extends FlowItem<T, C>> implements Comparabl
      * Defines a transition target of {@link FlowItem#targets()}
      *
      * @param target    defines the transition target
-     * @param condition {@code condition} which to match. On {@code true} will execute the transition - Conditions
+     * @param condition {@code condition} to match. On {@code true} will execute the transition - Conditions
      *                  can be also used to trigger a process
      * @return returns the current object
      */
@@ -172,7 +185,7 @@ public abstract class FlowItem<T, C extends FlowItem<T, C>> implements Comparabl
      * Defines a transition target of {@link FlowItem#targets()}
      *
      * @param target    defines the transition target
-     * @param condition {@code condition} which to match. On {@code true} will execute the transition - Conditions
+     * @param condition {@code condition} to match. On {@code true} will execute the transition - Conditions
      *                  can be also used to trigger a process
      * @return returns the {@code target} object
      */
@@ -184,7 +197,7 @@ public abstract class FlowItem<T, C extends FlowItem<T, C>> implements Comparabl
      * Defines a transition target of {@link FlowItem#targets()}
      *
      * @param target    defines the transition target
-     * @param condition {@code condition} which to match. On {@code true} will execute the transition - Conditions
+     * @param condition {@code condition} to match. On {@code true} will execute the transition - Conditions
      *                  can be also used to trigger a process
      * @return returns the {@code target} object
      */
@@ -205,7 +218,7 @@ public abstract class FlowItem<T, C extends FlowItem<T, C>> implements Comparabl
     /**
      * Defines a back transition of {@link FlowItem#targets()}
      *
-     * @param condition {@code condition} which to match. On {@code true} will execute the transition - Conditions
+     * @param condition {@code condition} to match. On {@code true} will execute the transition - Conditions
      *                  can be also used to trigger a process
      * @return returns the current object
      */
@@ -218,30 +231,32 @@ public abstract class FlowItem<T, C extends FlowItem<T, C>> implements Comparabl
     /**
      * Defines a back transition of {@link FlowItem#targets()}
      *
-     * @param condition {@code condition} which to match. On {@code true} will execute the transition - Conditions
-     *                  can be also used to trigger a process
+     * @param conditions {@code condition} to match. On {@code true} will execute the transition - Conditions
+     *                   can be also used to trigger a process
      * @return returns the current object
      */
     @SuppressWarnings("unchecked")
-    public C onBack(final Condition<T> condition) {
-        transitions.backCondition(condition, null);
+    public C onBack(final Condition<T>... conditions) {
+        stream(conditions).forEach(condition -> transitions.backCondition(condition, null));
         return (C) this;
     }
 
     /**
      * Defines a back transition target of {@link FlowItem#targets()}
      *
-     * @param condition {@code condition} which to match. On {@code true} will execute the transition - Conditions
-     *                  can be also used to trigger a process
+     * @param conditions {@code condition} to match. On {@code true} will execute the transition - Conditions
+     *                   can be also used to trigger a process
      * @return returns the current object
      */
     @SuppressWarnings("unchecked")
-    public C onBack(final Class<? extends Condition<?>> condition) {
-        try {
-            transitions.backCondition(condition == null ? null : (Condition<T>) condition.getConstructor().newInstance(), null);
-        } catch (Exception e) {
-            throw new FlowRuntimeException(label, null, "Condition construction error", e);
-        }
+    public C onBack(final Class<? extends Condition<?>>... conditions) {
+        stream(conditions).forEach(condition -> {
+            try {
+                transitions.backCondition(condition == null ? null : (Condition<T>) condition.getConstructor().newInstance(), null);
+            } catch (Exception e) {
+                throw new FlowRuntimeException(label, null, "Condition construction error", e);
+            }
+        });
         return (C) this;
     }
 
@@ -265,19 +280,10 @@ public abstract class FlowItem<T, C extends FlowItem<T, C>> implements Comparabl
     }
 
     /**
-     * Answers the question with {@code null} and returns next question
-     *
-     * @return empty if there is no next question configured
-     */
-    public Optional<FlowItem<?, ?>> answer() {
-        return answer(null);
-    }
-
-    /**
-     * Converts input for the answer - used to solve {@link FlowItem#parseAndAnswer(Object)}
+     * (Optional) Input converter to handle the answer - used to solve {@link FlowItem#parseAndApply(Object, Function)}
      *
      * @param answer input parameter to be parsed for the condition of a configured {@link Route}
-     * @return depends on the implementation - null usually means its not parsable which needs to be cached at
+     * @return {@link Optional#empty()} to used the default cast and JSON parser {@link FlowItem#parseAndApply(Object, Function)}
      */
     public abstract Optional<T> parse(final Object answer);
 
@@ -288,7 +294,44 @@ public abstract class FlowItem<T, C extends FlowItem<T, C>> implements Comparabl
      * @return next ({@code backTransition}) {@link FlowItem}
      */
     public Optional<FlowItem<?, ?>> parseAndAnswer(final Object answer) {
-        return parse(answer).flatMap(this::answer);
+        return parseAndApply(answer, this::answer);
+    }
+
+    /**
+     * Returns next {@link FlowItem} which is configured for a back transition
+     *
+     * @param answer   input parameter
+     * @param function apply after parsing
+     * @return next ({@code backTransition}) {@link FlowItem}
+     */
+    protected <R> Optional<R> parseAndApply(final Object answer, final Function<T, Optional<R>> function) {
+        return parse(answer).flatMap(function);
+    }
+
+    /**
+     * Converts answer object to json
+     *
+     * @param answer to convert to json
+     * @return input as json format
+     */
+    public String toJson(final Object answer) {
+        try {
+            return surveyMapper().writeValueAsString(answer);
+        } catch (JsonProcessingException e) {
+            throw new NotJsonPersonableType(label, null, "Unable to convert to json from type of [" + getClass().getSimpleName() + "]");
+        }
+    }
+
+    /**
+     * Converts json to answer object
+     *
+     * @param answerJson json to be converted to object
+     * @return object from json
+     */
+    public Optional<T> fromJson(final String answerJson) {
+        ObjectMapper mapper = surveyMapper();
+        return answerJson == null || answerJson.trim().length() == 0 ?
+                Optional.empty() : tryDo(() -> mapper.readValue(answerJson, new TypeReference<>() {}));
     }
 
     /**
@@ -300,7 +343,7 @@ public abstract class FlowItem<T, C extends FlowItem<T, C>> implements Comparabl
     public Optional<FlowItem<?, ?>> answer(final T answer) {
         if (answer != null) {
             for (Route<T> route : transitions.forwardRoutes()) {
-                if (route.hasCondition() && route.apply(answer)) {
+                if (route.hasAnyCondition() && route.apply(answer)) {
                     return Optional.of(route.target());
                 }
             }
@@ -315,7 +358,7 @@ public abstract class FlowItem<T, C extends FlowItem<T, C>> implements Comparabl
      * @return {@code true} if transition is allowed (empty if no transition is configured)
      */
     public Optional<Boolean> parseAndRevert(final Object answer) {
-        return parse(answer).flatMap(this::revert);
+        return parseAndApply(answer, this::revert);
     }
 
     /**
@@ -325,14 +368,16 @@ public abstract class FlowItem<T, C extends FlowItem<T, C>> implements Comparabl
      * @return {@code true} if transition is allowed (empty if no transition is configured)
      */
     public Optional<Boolean> revert(final T answer) {
-        if (answer != null) {
-            for (Route<T> route : transitions.backwardRoutes()) {
-                if (route.hasCondition()) {
-                    return Optional.of(route.apply(answer));
-                }
+        final AtomicBoolean blocker = new AtomicBoolean(false);
+        for (Route<T> route : transitions.backwardRoutes().stream().filter(Route::hasAnyCondition).collect(toSet())) {
+            final boolean applied = route.apply(answer);
+            if (!applied) {
+                blocker.set(true);
+            } else {
+                return Optional.of(true);
             }
         }
-        return transitions.backwardRoutes().stream().filter(Route::hasNoCondition).findFirst().map(route -> route.apply(answer));
+        return blocker.get() ? Optional.of(false) : transitions.backwardRoutes().stream().filter(Route::hasNoCondition).findFirst().map(route -> route.apply(answer));
     }
 
     /**
@@ -346,7 +391,7 @@ public abstract class FlowItem<T, C extends FlowItem<T, C>> implements Comparabl
      * @param answer input for check
      * @return {@code true} if {@link HistoryItem} relates to the current {@link FlowItem}
      */
-    public boolean match(final HistoryItem answer) {
+    public boolean match(final HistoryItemBase<?> answer) {
         return answer != null && label.equals(answer.getLabel());
     }
 
@@ -431,6 +476,22 @@ public abstract class FlowItem<T, C extends FlowItem<T, C>> implements Comparabl
         }
     }
 
+    private Optional<T> tryCast(final Object object) {
+        try {
+            return Optional.ofNullable((T) object);
+        } catch (ClassCastException cce) {
+            return Optional.empty();
+        }
+    }
+
+    private <R> Optional<R> tryDo(final SupplierThrowable<R, Exception> supplier) {
+        try {
+            return Optional.ofNullable(supplier.get());
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -448,7 +509,7 @@ public abstract class FlowItem<T, C extends FlowItem<T, C>> implements Comparabl
 
     @Override
     public String toString() {
-        return "Question{" +
+        return "FlowItem{" +
                 "label='" + label + '\'' +
                 '}';
     }

@@ -2,6 +2,8 @@ package berlin.yuna.survey.logic;
 
 import berlin.yuna.survey.model.Condition;
 import berlin.yuna.survey.model.HistoryItem;
+import berlin.yuna.survey.model.HistoryItemBase;
+import berlin.yuna.survey.model.HistoryItemJson;
 import berlin.yuna.survey.model.types.FlowItem;
 
 import java.time.Duration;
@@ -22,8 +24,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static berlin.yuna.survey.model.HistoryItemBase.State.ANSWERED;
+import static berlin.yuna.survey.model.HistoryItemBase.State.CURRENT;
+import static berlin.yuna.survey.model.HistoryItemBase.State.DRAFT;
 import static berlin.yuna.survey.model.exception.QuestionNotFoundException.itemNotFound;
 import static berlin.yuna.survey.model.exception.QuestionNotFoundException.itemNotFoundInHistory;
+import static java.util.stream.Collectors.toCollection;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public class Survey {
@@ -54,9 +60,12 @@ public class Survey {
      * @return {@link Survey}
      * @throws IllegalStateException when the {@code history} is empty or has no valid {@link FlowItem}
      */
-    public static Survey init(final FlowItem<?, ?> flowStart, final Iterable<HistoryItem> history) {
+    public static Survey init(final FlowItem<?, ?> flowStart, final Iterable<? extends HistoryItemBase<?>> history) {
+        final LinkedList<HistoryItem> linkedHistory = StreamSupport.stream(history.spliterator(), false)
+                .map(item -> HistoryItem.of(flowStart, item))
+                .flatMap(Optional::stream)
+                .collect(toCollection(LinkedList::new));
         Survey context = init(flowStart);
-        final LinkedList<HistoryItem> linkedHistory = StreamSupport.stream(history.spliterator(), false).filter(answer -> flowStart.get(answer.getLabel()).isPresent()).collect(Collectors.toCollection(LinkedList::new));
         if (linkedHistory.isEmpty()) {
             return init(flowStart);
         }
@@ -82,7 +91,7 @@ public class Survey {
      * Transit to a specific {@link FlowItem} in the flow
      *
      * @param target {@link FlowItem} to transition to
-     * @return {@code true} if transition is allowed, {@code false} on config of {@link FlowItem#onBack(Condition)}
+     * @return {@code true} if transition is allowed, {@code false} on config of {@link FlowItem#onBack(Condition[])}
      * @throws IllegalArgumentException if the label is not part of the flow or when the forward transition has not
      *                                  enough answers (will transition to the nearest possible {@link FlowItem})
      */
@@ -115,7 +124,7 @@ public class Survey {
      * To avoid cast its recommended to use {@link FlowItem#get(FlowItem)}
      *
      * @param label The {@code label} to search in flow
-     * @return Returns {@link Optional< FlowItem >} or {@code null} when flow doesn't contain the
+     * @return Returns {@link Optional<FlowItem>} or {@code null} when flow doesn't contain the
      * requested item
      */
     public FlowItem<?, ?> get(final String label) {
@@ -182,6 +191,15 @@ public class Survey {
     }
 
     /**
+     * Get history of answers
+     *
+     * @return all answers as json format which were given in the context
+     */
+    public List<HistoryItemJson> getHistoryJson() {
+        return history.stream().map(item -> HistoryItemJson.of(flowStart, item)).flatMap(Optional::stream).collect(toCollection(LinkedList::new));
+    }
+
+    /**
      * Get history size
      *
      * @return number of given answers
@@ -200,8 +218,8 @@ public class Survey {
     }
 
     private Survey answer(final Object answer, final boolean upDate) {
-        markAsAnswered(last.label(), answer, upDate);
         Optional<FlowItem<?, ?>> result = last.parseAndAnswer(answer);
+        markAsAnswered(last.label(), answer, upDate);
         if (result.isPresent()) {
             last = result.get();
             if (upDate && !isEnded()) {
@@ -280,11 +298,11 @@ public class Survey {
 
     private void markAsCurrent(final String label) {
         final HistoryItem historyItem = getOrCreateAnswer(label);
-        historyItem.setState(HistoryItem.State.CURRENT);
+        historyItem.setState(CURRENT);
     }
 
     private void markAsDraft(final String label) {
-        getOrCreateAnswer(label).setState(HistoryItem.State.DRAFT);
+        getOrCreateAnswer(label).setState(DRAFT);
     }
 
     private void markAsAnswered(final String label, final Object answer, final boolean upDate) {
@@ -292,7 +310,7 @@ public class Survey {
         if (upDate || historyItem.isNotAnswered()) {
             historyItem.setCreatedAt(LocalDateTime.now(ZoneId.of("UTC")));
         }
-        historyItem.setState(HistoryItem.State.ANSWERED);
+        historyItem.setState(ANSWERED);
         historyItem.setAnswer(answer);
     }
 
