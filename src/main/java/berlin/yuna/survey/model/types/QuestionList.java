@@ -1,6 +1,6 @@
-package berlin.yuna.survey.model.types.simple;
+package berlin.yuna.survey.model.types;
 
-import berlin.yuna.survey.model.types.FlowItem;
+import berlin.yuna.survey.model.ContextExchange;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.Collection;
@@ -15,8 +15,8 @@ public class QuestionList extends FlowItem<Collection<String>, QuestionList> {
 
 
     @Override
-    public Optional<Collection<String>> parse(final Object answer) {
-        return collectionOf(answer, String.class);
+    public Optional<Collection<String>> parse(final ContextExchange exchange) {
+        return collectionOf(exchange.payload(), String.class);
     }
 
     //TODO: CollectionUtils

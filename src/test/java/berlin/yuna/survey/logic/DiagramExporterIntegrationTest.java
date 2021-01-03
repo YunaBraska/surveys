@@ -1,11 +1,13 @@
 package berlin.yuna.survey.logic;
 
 
-import berlin.yuna.survey.model.types.CustomCondition;
-import berlin.yuna.survey.model.types.CustomCondition2;
-import berlin.yuna.survey.model.types.CustomCondition4;
-import berlin.yuna.survey.model.types.simple.Question;
+import berlin.yuna.survey.helper.CustomCondition;
+import berlin.yuna.survey.helper.CustomCondition2;
+import berlin.yuna.survey.helper.CustomCondition4;
+import berlin.yuna.survey.model.types.FlowItem;
+import berlin.yuna.survey.model.types.Question;
 import guru.nidi.graphviz.engine.Format;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -14,7 +16,10 @@ import java.nio.file.Path;
 
 import static berlin.yuna.survey.logic.SurveyTest.createSimpleSurvey;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag("IntegrationTest")
 class DiagramExporterIntegrationTest {
@@ -24,13 +29,37 @@ class DiagramExporterIntegrationTest {
     public static final String Q5 = "Q5";
 
     @Test
+    @DisplayName("Render from survey")
     void renderDiagramFromSurvey() throws IOException {
         Survey survey = createDiagramSurvey();
+        assertThat(survey.diagram().config().diagram().survey(), is(equalTo(survey)));
         for (Format format : Format.values()) {
             System.out.println(survey.diagram().save(format).toPath().toUri());
         }
         final Path exampleOutput = Path.of(System.getProperty("user.dir"), "src/test/resources/diagram_example.svg");
         survey.diagram().save(exampleOutput.toFile(), Format.SVG);
+    }
+
+    @Test
+    @DisplayName("Render from flowItem")
+    void renderDiagramFromFlowItem() throws IOException {
+        FlowItem<?, ?> flow = createDiagramSurvey().getFirst();
+        assertThat(flow.diagram().config().diagram().survey().getFirst(), is(equalTo(flow)));
+        assertThat(flow.diagram().save(Format.SVG).exists(), is(true));
+    }
+
+    @Test
+    @DisplayName("Save diagram without format")
+    void saveDiagramWithoutFormat_shouldThrowException() throws IOException {
+        assertThrows(IllegalArgumentException.class, () -> Question.of("Q1").diagram().save(null, null));
+    }
+
+    @Test
+    @DisplayName("Set config")
+    void setConfig() {
+        final DiagramExporter diagramExporter = Question.of("Q1").diagram();
+        diagramExporter.Config(null);
+        assertThat(diagramExporter.config(), is(nullValue()));
     }
 
     public static Survey createDiagramSurvey() {

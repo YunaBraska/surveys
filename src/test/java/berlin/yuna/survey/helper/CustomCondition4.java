@@ -1,10 +1,10 @@
-package berlin.yuna.survey.model.types;
+package berlin.yuna.survey.helper;
 
 import berlin.yuna.survey.model.Condition;
 
-public class CustomConditionInvalid extends Condition<String> {
+public class CustomCondition4 extends Condition<String> {
 
-    private CustomConditionInvalid() {
+    public CustomCondition4() {
         super("");
     }
 

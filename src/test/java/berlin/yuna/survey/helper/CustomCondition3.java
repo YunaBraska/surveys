@@ -1,4 +1,4 @@
-package berlin.yuna.survey.model.types;
+package berlin.yuna.survey.helper;
 
 import berlin.yuna.survey.model.Condition;
 

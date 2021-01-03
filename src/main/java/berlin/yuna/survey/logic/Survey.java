@@ -1,14 +1,13 @@
 package berlin.yuna.survey.logic;
 
 import berlin.yuna.survey.model.Condition;
+import berlin.yuna.survey.model.ContextExchange;
 import berlin.yuna.survey.model.HistoryItem;
 import berlin.yuna.survey.model.HistoryItemBase;
 import berlin.yuna.survey.model.HistoryItemJson;
 import berlin.yuna.survey.model.types.FlowItem;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -24,6 +23,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static berlin.yuna.survey.logic.CommonUtils.getTime;
+import static berlin.yuna.survey.model.ContextExchange.contextOf;
 import static berlin.yuna.survey.model.HistoryItemBase.State.ANSWERED;
 import static berlin.yuna.survey.model.HistoryItemBase.State.CURRENT;
 import static berlin.yuna.survey.model.HistoryItemBase.State.DRAFT;
@@ -34,6 +35,7 @@ import static java.util.stream.Collectors.toCollection;
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public class Survey {
 
+    private static final String TRANSITION = "revert";
     private FlowItem<?, ?> last;
     private FlowItem<?, ?> flowStart;
     private boolean autoBackTransition = true;
@@ -90,12 +92,37 @@ public class Survey {
     /**
      * Transit to a specific {@link FlowItem} in the flow
      *
+     * @param label   for {@link FlowItem} to transition to
+     * @param context sets the context on {@link ContextExchange} which is used at {@link FlowItem#parse(ContextExchange)}
+     * @return {@code true} if transition is allowed, {@code false} on back transition config
+     * @throws IllegalArgumentException if the label is not part of the flow or when the forward transition has not enough answers
+     */
+    public boolean transitTo(final String label, final Object context) {
+        return transitTo(last.get(label).orElseThrow(() -> itemNotFound(label, flowStart.label())), context);
+    }
+
+    /**
+     * Transit to a specific {@link FlowItem} in the flow
+     *
      * @param target {@link FlowItem} to transition to
      * @return {@code true} if transition is allowed, {@code false} on config of {@link FlowItem#onBack(Condition[])}
      * @throws IllegalArgumentException if the label is not part of the flow or when the forward transition has not
      *                                  enough answers (will transition to the nearest possible {@link FlowItem})
      */
     public boolean transitTo(final FlowItem<?, ?> target) {
+        return transitTo(target, null);
+    }
+
+    /**
+     * Transit to a specific {@link FlowItem} in the flow
+     *
+     * @param target  {@link FlowItem} to transition to
+     * @param context sets the context on {@link ContextExchange} which is used at {@link FlowItem#parse(ContextExchange)}
+     * @return {@code true} if transition is allowed, {@code false} on config of {@link FlowItem#onBack(Condition[])}
+     * @throws IllegalArgumentException if the label is not part of the flow or when the forward transition has not
+     *                                  enough answers (will transition to the nearest possible {@link FlowItem})
+     */
+    public boolean transitTo(final FlowItem<?, ?> target, final Object context) {
         if (target.equals(get())) {
             return true;
         }
@@ -103,9 +130,9 @@ public class Survey {
         assertQuestionBelongsToFlow(target);
 
         if (history.stream().filter(HistoryItem::isNotDraft).anyMatch(target::match)) {
-            result = runBackTransitions(target);
+            result = runBackTransitions(target, context);
         } else {
-            runForwardTransitions(target);
+            runForwardTransitions(target, context);
         }
         return result;
     }
@@ -124,7 +151,7 @@ public class Survey {
      * To avoid cast its recommended to use {@link FlowItem#get(FlowItem)}
      *
      * @param label The {@code label} to search in flow
-     * @return Returns {@link Optional<FlowItem>} or {@code null} when flow doesn't contain the
+     * @return {@link Optional<FlowItem>} or {@code null} when flow doesn't contain the
      * requested item
      */
     public FlowItem<?, ?> get(final String label) {
@@ -136,7 +163,7 @@ public class Survey {
      * To avoid cast its recommended to use {@link FlowItem#get(FlowItem)}
      *
      * @param label The {@code label} to search in flow
-     * @return Returns {@link FlowItem} or {@code null} when flow doesn't contain the
+     * @return {@link FlowItem} or {@code null} when flow doesn't contain the
      * requested item
      */
     public FlowItem<?, ?> get(final Enum<?> label) {
@@ -147,7 +174,7 @@ public class Survey {
      * Get a flow item by the given {@link FlowItem}
      *
      * @param type {@link FlowItem} to search in flow
-     * @return Returns {@link FlowItem} or {@code null} when flow doesn't contain the
+     * @return {@link FlowItem} or {@code null} when flow doesn't contain the
      * requested item
      */
     public <I extends FlowItem<?, ?>> I get(final I type) {
@@ -211,22 +238,23 @@ public class Survey {
     /**
      * Solves the current {@link FlowItem} of the flow
      *
+     * @param answer answer to solve the current {@link FlowItem}
      * @return {@link Survey}
      */
     public Survey answer(final Object answer) {
-        return answer(answer, true);
+        return answer(answer, null);
     }
 
-    private Survey answer(final Object answer, final boolean upDate) {
-        Optional<FlowItem<?, ?>> result = last.parseAndAnswer(answer);
-        markAsAnswered(last.label(), answer, upDate);
-        if (result.isPresent()) {
-            last = result.get();
-            if (upDate && !isEnded()) {
-                markAsCurrent(last.label());
-            }
-        }
-        return this;
+    /**
+     * Solves the current {@link FlowItem} of the flow
+     *
+     * @param answer  answer to solve the current {@link FlowItem}
+     * @param context sets the context on {@link ContextExchange} which is used at {@link FlowItem#parse(ContextExchange)}
+     * @return {@link Survey}
+     */
+    public Survey answer(final Object answer, final Object context) {
+        return answer instanceof ContextExchange ? answer((ContextExchange) answer, true) :
+                answer(contextOf(this, answer, context), true);
     }
 
     /**
@@ -305,13 +333,13 @@ public class Survey {
         getOrCreateAnswer(label).setState(DRAFT);
     }
 
-    private void markAsAnswered(final String label, final Object answer, final boolean upDate) {
+    private void markAsAnswered(final String label, final ContextExchange context, final boolean upDate) {
         final HistoryItem historyItem = getOrCreateAnswer(label);
         if (upDate || historyItem.isNotAnswered()) {
-            historyItem.setCreatedAt(LocalDateTime.now(ZoneId.of("UTC")));
+            historyItem.setCreatedAt(getTime());
         }
         historyItem.setState(ANSWERED);
-        historyItem.setAnswer(answer);
+        historyItem.setAnswer(context.payload());
     }
 
     private HistoryItem getOrCreateAnswer(final String label) {
@@ -338,26 +366,31 @@ public class Survey {
     }
 
 
-    private void runForwardTransitions(final FlowItem<?, ?> target) {
+    private void runForwardTransitions(final FlowItem<?, ?> target, final Object context) {
         final Set<String> checkedLabel = new HashSet<>();
         final Map<String, Object> mappedHistory = getHistoryAnswered().collect(toLinkedMap(HistoryItem::getLabel, HistoryItem::getAnswer));
         String label = flowStart.label();
         do {
-            final FlowItem<?, ?> currentQuestion = answer(mappedHistory.get(label), false).get();
+            final FlowItem<?, ?> currentQuestion = answer(contextOf(this, mappedHistory.get(label), context, target).put(TRANSITION, false), false).get();
             label = currentQuestion.label();
             if (checkedLabel.contains(label)) {
                 //FIXME: custom checked exception
-                throw new IllegalArgumentException("Unable transition to [" + target.label() + "]" + " Answer from the history did not solved [" + label + "]");
+                throw new IllegalArgumentException(
+                        "Unable transition to [" + target.label() + "] "
+                                + "could not solve [" + label + "] "
+                                + (mappedHistory.containsKey(label)? "by given answer [" + mappedHistory.get(label) + "] "
+                                : "no history item found for this label")
+                );
             }
             checkedLabel.add(label);
             last = currentQuestion;
         } while (!label.equals(target.label()));
         if (mappedHistory.containsKey(target.label())) {
-            answer(label, false);
+            answer(contextOf(this, mappedHistory.get(label), context, target).put(TRANSITION, false), false);
         }
     }
 
-    private boolean runBackTransitions(final FlowItem<?, ?> question) {
+    private boolean runBackTransitions(final FlowItem<?, ?> target, final Object context) {
         final Iterator<HistoryItem> iterator = new LinkedList<>(history).descendingIterator();
         while (iterator.hasNext()) {
             HistoryItem answer = iterator.next();
@@ -365,12 +398,14 @@ public class Survey {
                 history.remove(answer);
                 continue;
             }
-            if (answer.getLabel().equals(question.label())) {
+            if (answer.getLabel().equals(target.label())) {
                 markAsCurrent(answer.getLabel());
                 last = flowStart.getOrElse(answer.getLabel(), last);
                 return true;
             }
-            final boolean revertIsAllowed = flowStart.get(answer.getLabel()).flatMap(q -> q.parseAndRevert(answer.getAnswer())).orElse(autoBackTransition);
+            final boolean revertIsAllowed = flowStart.get(answer.getLabel())
+                    .flatMap(q -> q.parseAndRevert(contextOf(this, answer.getAnswer(), context, target).put(TRANSITION, true)))
+                    .orElse(autoBackTransition);
             if (revertIsAllowed) {
                 markAsDraft(answer.getLabel());
                 last = flowStart.getOrElse(answer.getLabel(), last);
@@ -381,6 +416,19 @@ public class Survey {
         }
         markAsCurrent(last.label());
         return true;
+    }
+
+
+    private Survey answer(final ContextExchange context, final boolean upDate) {
+        final Optional<FlowItem<?, ?>> result = last.parseAndAnswer(context);
+        markAsAnswered(last.label(), context, upDate);
+        if (result.isPresent()) {
+            last = result.get();
+            if (upDate && !isEnded()) {
+                markAsCurrent(last.label());
+            }
+        }
+        return this;
     }
 
     private void assertQuestionBelongsToFlow(final FlowItem<?, ?> question) {

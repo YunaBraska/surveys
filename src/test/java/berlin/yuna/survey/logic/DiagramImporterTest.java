@@ -2,10 +2,10 @@ package berlin.yuna.survey.logic;
 
 import berlin.yuna.survey.model.exception.FlowImportException;
 import berlin.yuna.survey.model.exception.FlowRuntimeException;
-import berlin.yuna.survey.model.types.CustomCondition4;
-import berlin.yuna.survey.model.types.CustomConditionInvalid;
-import berlin.yuna.survey.model.types.QuestionInvalid;
-import berlin.yuna.survey.model.types.simple.Question;
+import berlin.yuna.survey.helper.CustomCondition4;
+import berlin.yuna.survey.helper.CustomConditionInvalid;
+import berlin.yuna.survey.helper.QuestionInvalid;
+import berlin.yuna.survey.model.types.Question;
 import guru.nidi.graphviz.attribute.Shape;
 import guru.nidi.graphviz.engine.Format;
 import org.junit.jupiter.api.DisplayName;
@@ -50,7 +50,7 @@ class DiagramImporterTest {
     @DisplayName("Export / Import without choice")
     void importDiagramWithoutChoice() throws IOException {
         Survey survey = createDiagramSurvey();
-        final DiagramExporter diagramExporter = survey.diagram().config().add(ITEM_CHOICE, Shape.NONE).exporter();
+        final DiagramExporter diagramExporter = survey.diagram().config().add(ITEM_CHOICE, Shape.NONE).diagram();
         final DiagramImporter flowImporter = new DiagramImporter();
         for (int i = 0; i < 4; i++) {
             final File exported = diagramExporter.save(createTempFile("diagram_" + i + "_", "." + Format.DOT.fileExtension), Format.DOT);
@@ -63,7 +63,7 @@ class DiagramImporterTest {
     @DisplayName("Export / Import with back transitions")
     void importDiagramWithBackTransitions() throws IOException {
         Survey survey = createDiagramSurvey();
-        final DiagramExporter diagramExporter = survey.diagram().config().showBackTransition(true).exporter();
+        final DiagramExporter diagramExporter = survey.diagram().config().showBackTransition(true).diagram();
         final DiagramImporter flowImporter = new DiagramImporter();
         for (int i = 0; i < 4; i++) {
             final File exported = diagramExporter.save(createTempFile("diagram_" + i + "_", "." + Format.DOT.fileExtension), Format.DOT);
@@ -114,7 +114,7 @@ class DiagramImporterTest {
     @DisplayName("FlowImporter Register")
     void registerCheck() {
         assertThat(new DiagramImporter().flowRegister(), is(not(empty())));
-        assertThat(new DiagramImporter().choiceRegister(), is(not(empty())));
+        assertThat(new DiagramImporter().conditionRegister(), is(not(empty())));
     }
 
     private Survey validateAndReturn(final Survey survey, final File exported, final Survey imported) {

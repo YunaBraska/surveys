@@ -1,18 +1,18 @@
-package berlin.yuna.survey.model.types.simple;
+package berlin.yuna.survey.model.types;
 
-import berlin.yuna.survey.model.types.FlowItem;
+import berlin.yuna.survey.model.ContextExchange;
 
 import java.util.Optional;
 
 public class QuestionInt extends FlowItem<Integer, QuestionInt> {
 
     @Override
-    public Optional<Integer> parse(final Object answer) {
+    public Optional<Integer> parse(final ContextExchange exchange) {
         try {
-            if (answer instanceof Number) {
-                return Optional.of(((Number) answer).intValue());
+            if (exchange.payload() instanceof Number) {
+                return Optional.of(((Number) exchange.payload()).intValue());
             }
-            return Optional.of(Integer.valueOf(String.valueOf(answer)));
+            return Optional.of(Integer.valueOf(String.valueOf(exchange.payload())));
         } catch (Exception e) {
             return Optional.empty();
         }

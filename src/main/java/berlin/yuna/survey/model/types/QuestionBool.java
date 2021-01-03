@@ -1,22 +1,22 @@
-package berlin.yuna.survey.model.types.simple;
+package berlin.yuna.survey.model.types;
 
-import berlin.yuna.survey.model.types.FlowItem;
+import berlin.yuna.survey.model.ContextExchange;
 
 import java.util.Optional;
 
 public class QuestionBool extends FlowItem<Boolean, QuestionBool> {
 
     @Override
-    public Optional<Boolean> parse(final Object answer) {
-        if (answer instanceof Boolean) {
-            return Optional.of((Boolean) answer);
-        } else if (answer instanceof Number && ((Number) answer).intValue() == 1) {
+    public Optional<Boolean> parse(final ContextExchange exchange) {
+        if (exchange.payload() instanceof Boolean) {
+            return Optional.of((Boolean) exchange.payload());
+        } else if (exchange.payload() instanceof Number && ((Number) exchange.payload()).intValue() == 1) {
             return Optional.of(true);
-        } else if (answer instanceof Number && ((Number) answer).intValue() == 0) {
+        } else if (exchange.payload() instanceof Number && ((Number) exchange.payload()).intValue() == 0) {
             return Optional.of(false);
         }
 
-        final String s = String.valueOf(answer);
+        final String s = String.valueOf(exchange.payload());
         if (equalsIgnoreCase(s, "0", "no", "false", "reject", "disagree", "cancel", "abort", "refuse", "forbid", "fail", "failed", "error")) {
             return Optional.of(false);
         } else if (equalsIgnoreCase(s, "1", "yes", "true", "agree", "ok", "continue", "succeed", "success", "done")) {

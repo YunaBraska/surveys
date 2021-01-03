@@ -1,13 +1,13 @@
 package berlin.yuna.survey.model.types;
 
 
+import berlin.yuna.survey.helper.CustomCondition;
+import berlin.yuna.survey.helper.CustomConditionInvalid;
 import berlin.yuna.survey.model.HistoryItem;
 import berlin.yuna.survey.model.Route;
+import berlin.yuna.survey.model.exception.FlowRuntimeException;
 import berlin.yuna.survey.model.exception.QuestionNotFoundException;
 import berlin.yuna.survey.model.exception.QuestionTypeException;
-import berlin.yuna.survey.model.types.simple.Question;
-import berlin.yuna.survey.model.types.simple.QuestionBool;
-import berlin.yuna.survey.model.types.simple.QuestionInt;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -16,8 +16,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static berlin.yuna.survey.model.ContextExchange.contextOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
@@ -87,11 +89,19 @@ class FlowItemTest {
     }
 
     @Test
+    @DisplayName("Target from class")
+    void targetFromClass() {
+        final Question flow = Question.of(Q1);
+        flow.target(Question.of(Q2), CustomCondition.class);
+        assertThrows(FlowRuntimeException.class, () -> flow.target(Question.of(Q3), CustomConditionInvalid.class));
+    }
+
+    @Test
     @DisplayName("Parse answer")
     void parseAnswer() {
-        assertThat(QuestionBool.of(Q1).parse("yes"), is(equalTo(Optional.of(true))));
-        assertThat(QuestionBool.of(Q1).parse("failed"), is(equalTo(Optional.of(false))));
-        assertThat(QuestionBool.of(Q1).parse("invalid"), is(Optional.empty()));
+        assertThat(QuestionBool.of(Q1).parse(contextOf("yes")), is(equalTo(Optional.of(true))));
+        assertThat(QuestionBool.of(Q1).parse(contextOf("failed")), is(equalTo(Optional.of(false))));
+        assertThat(QuestionBool.of(Q1).parse(contextOf("invalid")), is(Optional.empty()));
     }
 
     @Test
@@ -100,9 +110,9 @@ class FlowItemTest {
         QuestionBool q1 = QuestionBool.of(Q1)
                 .target(Question.of(Q2), b -> b)
                 .target(Question.of(Q3), b -> !b);
-        assertThat(q1.parseAndAnswer("0"), is(equalTo(Optional.of(Question.of(Q3)))));
-        assertThat(q1.parseAndAnswer("1"), is(equalTo(Optional.of(Question.of(Q2)))));
-        assertThat(q1.parseAndAnswer("2"), is(Optional.empty()));
+        assertThat(q1.parseAndAnswer(contextOf("0")), is(equalTo(Optional.of(Question.of(Q3)))));
+        assertThat(q1.parseAndAnswer(contextOf("1")), is(equalTo(Optional.of(Question.of(Q2)))));
+        assertThat(q1.parseAndAnswer(contextOf("2")), is(Optional.empty()));
     }
 
     @Test
@@ -139,10 +149,12 @@ class FlowItemTest {
     void onBack() {
         final AtomicBoolean isBackTriggered = new AtomicBoolean(false);
         final Question flow = Question.of(Q1);
+        assertThat(flow.targetsBack(), is(empty()));
         flow.onBack(answer -> {
             isBackTriggered.set(true);
             return true;
         });
+        assertThat(flow.targetsBack(), is(not(empty())));
         assertThat(isBackTriggered.get(), is(false));
 
         flow.revert("This triggers back transition");
@@ -166,6 +178,15 @@ class FlowItemTest {
     }
 
     @Test
+    @DisplayName("From json")
+    void fromJson() {
+        assertThat(Question.of(Q1).fromJson(null), is(equalTo(Optional.empty())));
+        assertThat(Question.of(Q1).fromJson(""), is(equalTo(Optional.empty())));
+        assertThat(Question.of(Q1).fromJson("{invalid]"), is(equalTo(Optional.empty())));
+        assertThat(Question.of(Q1).fromJson("\"valid\""), is(equalTo(Optional.of("valid"))));
+    }
+
+    @Test
     @DisplayName("Get by enum, string and type [COV]")
     void Get() {
         final Question q2 = Question.of(Q2);
@@ -177,7 +198,7 @@ class FlowItemTest {
         assertThat(flow.getOrElse(Q5, q2), is(q2));
         assertThat(flow.getOrElse(qString, q2), is(q2));
         //By Enum
-        Enum qEnum = null;
+        Enum<?> qEnum = null;
         assertThat(flow.get(Q.Q1).get().targets(), hasItems(q2));
         assertThat(flow.getOrElse(Q.Q2, Question.of(Q3)), is(q2));
         assertThat(flow.getOrElse(Q.Q5, q2), is(q2));

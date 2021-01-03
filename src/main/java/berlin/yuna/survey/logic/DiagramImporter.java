@@ -28,6 +28,9 @@ import static berlin.yuna.survey.logic.DiagramExporter.CONFIG_KEY_TARGET;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toMap;
 
+/**
+ * The {@link DiagramImporter} imports diagrams/flows from a {@link File} or {@link String} with a DOT format
+ */
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public class DiagramImporter {
 
@@ -47,26 +50,80 @@ public class DiagramImporter {
         });
     }
 
+    /**
+     * Reads a {@link String} with a DOT format
+     *
+     * @param dot {@link String} with dot format
+     * @return Returns imported flow
+     * @throws IOException Exception on any parse error
+     */
     public FlowItem<?, ?> read(final String dot) throws IOException {
         return read(new Parser().read(dot));
     }
 
+    /**
+     * Reads a {@link InputStream} with a DOT format
+     *
+     * @param inputStream {@link InputStream} with dot format
+     * @return imported flow
+     * @throws IOException Exception on any parse error
+     */
     public FlowItem<?, ?> read(final InputStream inputStream) throws IOException {
         return read(new Parser().read(inputStream));
     }
 
+    /**
+     * Reads a {@link File} with a DOT format
+     *
+     * @param file {@link File} with dot format
+     * @return imported flow
+     * @throws IOException Exception on any parse error
+     */
     public FlowItem<?, ?> read(final File file) throws IOException {
         return read(new Parser().read(file));
     }
 
+    /**
+     * Reads a {@link Path} with a DOT format
+     *
+     * @param path {@link Path} with dot format
+     * @return imported flow
+     * @throws IOException Exception on any parse error
+     */
     public FlowItem<?, ?> read(final Path path) throws IOException {
         return read(path.toFile());
     }
 
+    /**
+     * Reads a {@link MutableGraph} with a DOT format
+     *
+     * @param graph {@link MutableGraph} with dot format
+     * @return imported flow
+     */
     public FlowItem<?, ?> read(final MutableGraph graph) {
         final Map<String, FlowItem<?, ?>> flowItems = toFlowItems(graph);
         graph.nodes().forEach(node -> addTargets(flowItems, node));
         return flowItems.get(graph.rootNodes().iterator().next().name().value());
+    }
+
+    /**
+     * FlowRegister is a set of known {@link FlowItem} which are recognised and used while parsing.
+     * Any missing item can lead to an error while the import.
+     *
+     * @return Set of known {@link FlowItem}
+     */
+    public Set<Class<? extends FlowItem<?, ?>>> flowRegister() {
+        return flowRegister;
+    }
+
+    /**
+     * ConditionRegister is a set of known {@link Condition} which are recognised and used while parsing.
+     * Any missing item can lead to an error while the import.
+     *
+     * @return Set of known {@link Condition}
+     */
+    public Set<Class<? extends Condition<?>>> conditionRegister() {
+        return choiceRegister;
     }
 
     private void addTargets(final Map<String, FlowItem<?, ?>> flowItems, final MutableNode node) {
@@ -77,15 +134,6 @@ public class DiagramImporter {
                 source.target(target, getConditionsByName(link.get(CONFIG_KEY_CONDITION)).findFirst().orElse(null));
             }
         });
-
-    }
-
-    public Set<Class<? extends FlowItem<?, ?>>> flowRegister() {
-        return flowRegister;
-    }
-
-    public Set<Class<? extends Condition<?>>> choiceRegister() {
-        return choiceRegister;
     }
 
     private Stream<? extends Class<? extends Condition<?>>> getConditionsByName(final Object name) {

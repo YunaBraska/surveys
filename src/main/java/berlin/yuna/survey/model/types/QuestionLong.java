@@ -1,6 +1,6 @@
-package berlin.yuna.survey.model.types.simple;
+package berlin.yuna.survey.model.types;
 
-import berlin.yuna.survey.model.types.FlowItem;
+import berlin.yuna.survey.model.ContextExchange;
 
 import java.util.Optional;
 
@@ -8,12 +8,12 @@ public class QuestionLong extends FlowItem<Long, QuestionLong> {
 
 
     @Override
-    public Optional<Long> parse(final Object answer) {
-        if (answer instanceof Number) {
-            return Optional.of(((Number) answer).longValue());
+    public Optional<Long> parse(final ContextExchange exchange) {
+        if (exchange.payload() instanceof Number) {
+            return Optional.of(((Number) exchange.payload()).longValue());
         }
         try {
-            return Optional.of(Long.valueOf(String.valueOf(answer)));
+            return Optional.of(Long.valueOf(String.valueOf(exchange.payload())));
         } catch (Exception e) {
             return Optional.empty();
         }

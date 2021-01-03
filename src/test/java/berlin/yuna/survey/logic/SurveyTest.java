@@ -3,7 +3,7 @@ package berlin.yuna.survey.logic;
 import berlin.yuna.survey.model.HistoryItem;
 import berlin.yuna.survey.model.exception.QuestionNotFoundException;
 import berlin.yuna.survey.model.types.FlowItem;
-import berlin.yuna.survey.model.types.simple.Question;
+import berlin.yuna.survey.model.types.Question;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -152,10 +152,12 @@ class SurveyTest {
         System.out.println(survey.getDurationsMS());
     }
 
-    //TODO: transition back is blocked
-    //TODO: transition forward has not enough answers
-    //TODO: transition not possible (Question does not belong to flow)
-    //TODO: circular flow (transition back on target)
+    @Test
+    @DisplayName("Transition back and forward")
+    void transitionForwardWithNotEnoughAnswers() {
+        assertThrows(IllegalArgumentException.class, () -> createSimpleSurvey().transitTo(END, "context"));
+    }
+
     @Test
     @DisplayName("Transition back and forward")
     void transitionBackAndForward() {

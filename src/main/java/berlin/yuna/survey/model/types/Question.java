@@ -1,17 +1,14 @@
-package berlin.yuna.survey.model.types.simple;
+package berlin.yuna.survey.model.types;
 
-import berlin.yuna.survey.model.types.FlowItem;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import berlin.yuna.survey.model.ContextExchange;
 
 import java.util.Optional;
-
-import static berlin.yuna.survey.config.SurveyDefaults.surveyMapper;
 
 public class Question extends FlowItem<String, Question> {
 
     @Override
-    public Optional<String> parse(final Object answer) {
-        return Optional.of(String.valueOf(answer));
+    public Optional<String> parse(final ContextExchange exchange) {
+        return exchange.payload(String.class);
     }
 
     public static Question of(final Enum<?> label) {

@@ -6,6 +6,11 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Objects;
 
+import static berlin.yuna.survey.logic.CommonUtils.getTime;
+
+/**
+ * The {@link HistoryItem} is used to keep track of all answers/transitions in the flow
+ */
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public abstract class HistoryItemBase<T> implements Comparable<HistoryItemBase> {
     private String label;
@@ -14,7 +19,7 @@ public abstract class HistoryItemBase<T> implements Comparable<HistoryItemBase> 
     private State state = State.CURRENT;
 
     public HistoryItemBase() {
-        this.createdAt = LocalDateTime.now(ZoneId.of("UTC"));
+        this.createdAt = getTime();
     }
 
     public HistoryItemBase(final String label, final T answer, final State state) {

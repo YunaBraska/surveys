@@ -5,7 +5,7 @@ import berlin.yuna.survey.model.DiagramConfig.ElementType;
 import berlin.yuna.survey.model.HistoryItemBase;
 import berlin.yuna.survey.model.Route;
 import berlin.yuna.survey.model.types.FlowItem;
-import berlin.yuna.survey.model.types.simple.Question;
+import berlin.yuna.survey.model.types.Question;
 import guru.nidi.graphviz.attribute.Arrow;
 import guru.nidi.graphviz.attribute.Attributes;
 import guru.nidi.graphviz.attribute.Color;
@@ -42,6 +42,10 @@ import static guru.nidi.graphviz.model.Link.to;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 
+/**
+ * The {@link DiagramExporter} exports and renders a {@link Survey} within its {@link FlowItem} to the given
+ * {@link Format}. The export can be configured using {@link DiagramExporter#config()}
+ */
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public class DiagramExporter {
 
@@ -88,14 +92,28 @@ public class DiagramExporter {
         return result;
     }
 
+    /**
+     * Method do configure the diagram export
+     *
+     * @return diagram configuration
+     */
     public DiagramConfig config() {
         return config;
     }
 
+    /**
+     * Replaces the current config
+     *
+     * @param config config replaces current one
+     */
     public void Config(final DiagramConfig config) {
         this.config = config;
     }
 
+    /**
+     * Get {@link Survey}
+     * @return {@link Survey}
+     */
     public Survey survey() {
         return survey;
     }
@@ -165,29 +183,6 @@ public class DiagramExporter {
                         .add(Style.DASHED)
                         .add(Arrow.EMPTY);
             }
-
-//            final AtomicReference<Link> link = new AtomicReference<>(to(secondNode)
-//                    .add(getLinkColor(firstNode, secondNode))
-//                    .add(Font.name("helvetica"))
-//                    .add(toLabel(route.getLabel())));
-//            if (!isChoice(secondNode)) {
-//                link.set(link.get()
-//                        .with(CONFIG_KEY_SOURCE, isChoice(firstNode) ? removeChoice(first.label()) : first.label())
-//                        .with(CONFIG_KEY_TARGET, route.isBackwardFlow() ? Label.of("") : route.target().label())
-//                );
-//            }
-//
-//            final String backConditions = getConditionName(route);
-//            if (backConditions.length() > 1) {
-//                link.set(link.get().with(CONFIG_KEY_CONDITION, backConditions));
-//            }
-//            if (route.isBackwardFlow()) {
-//                link.set(link.get()
-//                        .with(Color.ANTIQUEWHITE)
-//                        .with(Style.DASHED)
-//                        .with(Arrow.EMPTY)
-//                );
-//            }
             firstNode.addLink(newLink.get());
             links.add(id);
             return true;

@@ -1,11 +1,9 @@
 package berlin.yuna.survey.example;
 
 import berlin.yuna.survey.logic.Survey;
-import berlin.yuna.survey.model.HistoryItem;
-import berlin.yuna.survey.model.HistoryItemBase;
 import berlin.yuna.survey.model.HistoryItemJson;
-import berlin.yuna.survey.model.types.simple.Question;
-import berlin.yuna.survey.model.types.simple.QuestionBool;
+import berlin.yuna.survey.model.types.Question;
+import berlin.yuna.survey.model.types.QuestionBool;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
