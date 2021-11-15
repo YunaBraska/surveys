@@ -1,7 +1,8 @@
+# Ansible managed
 name: JAVA_CI_DEPLOY
 on:
   workflow_dispatch:
-    branches: [ main ]
+    branches: ['master']
   push:
     branches: ['master']
   pull_request:
@@ -36,7 +37,10 @@ jobs:
         with:
           coverageLocations: ${{github.workspace}}/target/site/jacoco/jacoco.xml:jacoco
       - name: Tag and Push
-        run: .github/scripts/push_changes.sh "https://x-access-token:${{ secrets.CI_TOKEN }}@github.com/${{ github.repository }}"
+        run: |
+          wget https://raw.githubusercontent.com/YunaBraska/YunaBraska/main/.github/scripts/push_changes.sh
+          chmod +x push_changes.sh
+          .github/scripts/push_changes.sh "https://x-access-token:${{ secrets.CI_TOKEN }}@github.com/${{ github.repository }}"
       - name: "Check if branch exists"
         run: |
           git fetch origin release:release &>/dev/null || true
