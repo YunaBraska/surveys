@@ -27,6 +27,8 @@ jobs:
           ./mvnw -B -q clean verify -Dmaven.test.skip=true
       - name: Run tests
         run: ./mvnw -B clean verify
+      - name: remove unwanted changes
+        run: git checkout src/test/resources/diagram_example.svg &> /dev/null
       - name: Publish code quality
         uses: paambaati/codeclimate-action@v2.7.4
         env:
@@ -41,6 +43,7 @@ jobs:
           wget https://raw.githubusercontent.com/YunaBraska/YunaBraska/main/.github/scripts/increment_version.sh -P .github/scripts
           chmod +x .github/scripts/versions.sh .github/scripts/push_changes.sh .github/scripts/increment_version.sh
           .github/scripts/push_changes.sh "https://x-access-token:${{ secrets.CI_TOKEN }}@github.com/${{ github.repository }}"
+          rm -rf .github/scripts
       - name: "Check if branch exists"
         run: |
           git fetch origin release:release &>/dev/null || true
