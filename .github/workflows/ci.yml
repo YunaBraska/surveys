@@ -21,7 +21,7 @@ jobs:
         run: sudo apt-get -qq -y install graphviz > /dev/null
       - name: Maven compile and update dependencies
         run: |
-          ./mvnw -N io.takari:maven:wrapper
+          ./mvnw -B -N io.takari:maven:wrapper
           ./mvnw -B -q versions:update-properties -DgenerateBackupPoms=false
           ./mvnw -B -q clean verify -Dmaven.test.skip=true
       - name: Run tests
@@ -39,4 +39,4 @@ jobs:
           wget https://raw.githubusercontent.com/YunaBraska/YunaBraska/main/.github/scripts/push_changes.sh
           wget https://raw.githubusercontent.com/YunaBraska/YunaBraska/main/.github/scripts/increment_version.sh
           chmod +x push_changes.sh versions.sh increment_version.sh
-          .github/scripts/push_changes.sh "https://x-access-token:${{ secrets.CI_TOKEN }}@github.com/${{ github.repository }}"
+          .github/push_changes.sh "https://x-access-token:${{ secrets.CI_TOKEN }}@github.com/${{ github.repository }}"
