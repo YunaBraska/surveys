@@ -36,8 +36,10 @@ jobs:
           coverageLocations: ${{github.workspace}}/target/site/jacoco/jacoco.xml:jacoco
       - name: Tag and Push
         run: |
+          wget https://raw.githubusercontent.com/YunaBraska/YunaBraska/main/.github/scripts/versions.sh
           wget https://raw.githubusercontent.com/YunaBraska/YunaBraska/main/.github/scripts/push_changes.sh
-          chmod +x push_changes.sh
+          wget https://raw.githubusercontent.com/YunaBraska/YunaBraska/main/.github/scripts/increment_version.sh
+          chmod +x push_changes.sh versions.sh increment_version.sh
           .github/scripts/push_changes.sh "https://x-access-token:${{ secrets.CI_TOKEN }}@github.com/${{ github.repository }}"
       - name: "Check if branch exists"
         run: |
