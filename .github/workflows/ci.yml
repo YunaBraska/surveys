@@ -35,8 +35,8 @@ jobs:
           coverageLocations: ${{github.workspace}}/target/site/jacoco/jacoco.xml:jacoco
       - name: Tag and Push
         run: |
-          wget -O github/scripts/versions.sh https://raw.githubusercontent.com/YunaBraska/YunaBraska/main/.github/scripts/versions.sh
-          wget -O github/scripts/push_changes.sh https://raw.githubusercontent.com/YunaBraska/YunaBraska/main/.github/scripts/push_changes.sh
-          wget -O github/scripts/increment_version.sh https://raw.githubusercontent.com/YunaBraska/YunaBraska/main/.github/scripts/increment_version.sh
-          chmod +x github/scripts/versions.sh github/scripts/push_changes.sh github/scripts/increment_version.sh
+          wget https://raw.githubusercontent.com/YunaBraska/YunaBraska/main/.github/scripts/versions.sh -P .github/scripts
+          wget https://raw.githubusercontent.com/YunaBraska/YunaBraska/main/.github/scripts/push_changes.sh -P .github/scripts
+          wget https://raw.githubusercontent.com/YunaBraska/YunaBraska/main/.github/scripts/increment_version.sh -P .github/scripts
+          chmod +x .github/scripts/versions.sh .github/scripts/push_changes.sh .github/scripts/increment_version.sh
           .github/scripts/push_changes.sh "https://x-access-token:${{ secrets.CI_TOKEN }}@github.com/${{ github.repository }}"
