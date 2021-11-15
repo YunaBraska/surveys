@@ -37,8 +37,7 @@ jobs:
           coverageLocations: ${{github.workspace}}/target/site/jacoco/jacoco.xml:jacoco
       - name: Tag and Push
         run: .github/scripts/push_changes.sh "https://x-access-token:${{ secrets.CI_TOKEN }}@github.com/${{ github.repository }}"
-
-- name: "Check if branch exists"
+      - name: "Check if branch exists"
         run: |
           git fetch origin release:release &>/dev/null || true
           if git rev-parse --verify "release" &>/dev/null; then echo "::set-env name=HAS_RELEASE_BRANCH::true"; fi
