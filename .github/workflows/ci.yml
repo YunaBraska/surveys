@@ -2,9 +2,9 @@ name: JAVA_CI
 
 on:
   push:
-    branches: [ master ]
+    branches: ['master']
   pull_request:
-    branches: [ master ]
+    branches: ['master']
 
 jobs:
   build:
@@ -15,7 +15,7 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 11
-      - name: Setup requirements
+      - name: Setup requirements run
         run: sudo apt-get -qq -y install graphviz > /dev/null
       - name: Maven compile and update dependencies
         run: |
