@@ -4,9 +4,10 @@ on:
   workflow_dispatch:
     branches: ['master']
   schedule:
-    - cron: "0 1 * * *"
+    - cron: "0 5 * * *"
 
 env:
+  SPRING_PROFILE: ci
   ACTIONS_ALLOW_UNSECURE_COMMANDS: true
 
 jobs:
