@@ -15,6 +15,7 @@ to [generate and import diagrams](#diagram-example) using [graphviz-java](https:
 [![Javadoc][javadoc_shield]][javadoc_link]
 [![Size][size_shield]][size_shield]
 ![Label][label_shield]
+![Label][java_version]
 
 * General
     * [Motivation](#motivation)
@@ -351,3 +352,4 @@ class SurveyExampleTest {
 [label_shield]: https://img.shields.io/badge/Yuna-QueenInside-blueviolet?style=flat-square
 [gitter_shield]: https://img.shields.io/gitter/room/YunaBraska/surveys?style=flat-square
 [gitter_link]: https://gitter.im/surveys/Lobby
+[java_version]: https://img.shields.io/badge/java-17-blueviolet?style=flat-square
