@@ -14,7 +14,6 @@ import static berlin.yuna.survey.logic.CommonUtils.getTime;
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public class ContextExchange {
 
-
     private Object context;
     private Survey survey;
     private FlowItem<?, ?> target;

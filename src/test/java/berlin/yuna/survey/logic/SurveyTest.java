@@ -170,7 +170,7 @@ class SurveyTest {
 
         //INVALID TARGET
         assertThrows(QuestionNotFoundException.class, () -> survey.transitTo(Question.of(Q4)));
-        FlowItem<?, ?> before = survey.get();
+        final FlowItem<?, ?> before = survey.get();
         //SAME TARGET
         survey.transitTo(survey.get());
         assertThat(survey.get(), is(equalTo(before)));
@@ -269,7 +269,7 @@ class SurveyTest {
     }
 
     public static Survey createSimpleSurvey() {
-        Question start = Question.of("START");
+        final Question start = Question.of("START");
         start.targetGet(Question.of("Q1"))
                 .targetGet(Question.of("Q2"))
                 .targetGet(Question.of("Q3"))

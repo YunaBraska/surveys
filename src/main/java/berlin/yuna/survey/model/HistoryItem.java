@@ -21,10 +21,10 @@ public class HistoryItem extends HistoryItemBase<Object> {
 
     public static Optional<HistoryItem> of(final FlowItem<?, ?> flowStart, final HistoryItemBase<?> item) {
         return flowStart.get(item.getLabel()).stream().findAny().map(flowItem -> {
-            if (item instanceof HistoryItem) {
-                return (HistoryItem) item;
-            } else if (item.getAnswer() instanceof String) {
-                return new HistoryItem(item, flowItem.fromJson((String) item.getAnswer()).orElse(null));
+            if (item instanceof HistoryItem historyItem) {
+                return historyItem;
+            } else if (item.getAnswer() instanceof String str) {
+                return new HistoryItem(item, flowItem.fromJson(str).orElse(null));
             } else {
                 return null;
             }

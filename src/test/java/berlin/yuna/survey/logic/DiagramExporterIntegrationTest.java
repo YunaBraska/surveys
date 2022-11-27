@@ -31,7 +31,7 @@ class DiagramExporterIntegrationTest {
     @Test
     @DisplayName("Render from survey")
     void renderDiagramFromSurvey() throws IOException {
-        Survey survey = createDiagramSurvey();
+        final Survey survey = createDiagramSurvey();
         assertThat(survey.diagram().config().diagram().survey(), is(equalTo(survey)));
         for (Format format : Format.values()) {
             System.out.println(survey.diagram().save(format).toPath().toUri());
@@ -43,14 +43,14 @@ class DiagramExporterIntegrationTest {
     @Test
     @DisplayName("Render from flowItem")
     void renderDiagramFromFlowItem() throws IOException {
-        FlowItem<?, ?> flow = createDiagramSurvey().getFirst();
+        final FlowItem<?, ?> flow = createDiagramSurvey().getFirst();
         assertThat(flow.diagram().config().diagram().survey().getFirst(), is(equalTo(flow)));
         assertThat(flow.diagram().save(Format.SVG).exists(), is(true));
     }
 
     @Test
     @DisplayName("Save diagram without format")
-    void saveDiagramWithoutFormat_shouldThrowException() throws IOException {
+    void saveDiagramWithoutFormat_shouldThrowException() {
         assertThrows(IllegalArgumentException.class, () -> Question.of("Q1").diagram().save(null, null));
     }
 

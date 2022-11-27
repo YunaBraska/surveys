@@ -20,6 +20,7 @@ import static berlin.yuna.survey.model.DiagramConfig.ElementType.DEFAULT;
 /**
  * The {@link DiagramConfig} is used to define the visible output of the diagram
  */
+@SuppressWarnings({"unused", "UnusedReturnValue"})
 public class DiagramConfig {
 
     private int width = -1;
@@ -60,7 +61,7 @@ public class DiagramConfig {
      *
      * @return current {@link DiagramConfig}
      */
-    public DiagramConfig width(int width) {
+    public DiagramConfig width(final int width) {
         this.width = width;
         return this;
     }
@@ -79,7 +80,7 @@ public class DiagramConfig {
      *
      * @return current {@link DiagramConfig}
      */
-    public DiagramConfig height(int height) {
+    public DiagramConfig height(final int height) {
         this.height = height;
         return this;
     }
@@ -98,7 +99,7 @@ public class DiagramConfig {
      *
      * @return current {@link DiagramConfig}
      */
-    public DiagramConfig direction(Rank.RankDir direction) {
+    public DiagramConfig direction(final Rank.RankDir direction) {
         this.direction = direction;
         return this;
     }
@@ -117,7 +118,7 @@ public class DiagramConfig {
      *
      * @return current {@link DiagramConfig}
      */
-    public DiagramConfig showBackTransition(boolean showBackTransition) {
+    public DiagramConfig showBackTransition(final boolean showBackTransition) {
         this.showBackTransition = showBackTransition;
         return this;
     }

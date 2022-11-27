@@ -3,7 +3,6 @@ package berlin.yuna.survey.model;
 import berlin.yuna.survey.model.types.FlowItem;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.Objects;
 
 import static berlin.yuna.survey.logic.CommonUtils.getTime;
@@ -12,7 +11,7 @@ import static berlin.yuna.survey.logic.CommonUtils.getTime;
  * The {@link HistoryItem} is used to keep track of all answers/transitions in the flow
  */
 @SuppressWarnings({"unused", "UnusedReturnValue"})
-public abstract class HistoryItemBase<T> implements Comparable<HistoryItemBase> {
+public abstract class HistoryItemBase<T> implements Comparable<HistoryItemBase<?>> {
     private String label;
     private T answer;
     private LocalDateTime createdAt;
@@ -42,12 +41,12 @@ public abstract class HistoryItemBase<T> implements Comparable<HistoryItemBase> 
         this.state = state;
     }
 
-    public HistoryItemBase<T> setLabel(String label) {
+    public HistoryItemBase<T> setLabel(final String label) {
         this.label = label;
         return this;
     }
 
-    public HistoryItemBase<T> setAnswer(T answer) {
+    public HistoryItemBase<T> setAnswer(final T answer) {
         this.answer = answer;
         return this;
     }
@@ -107,11 +106,11 @@ public abstract class HistoryItemBase<T> implements Comparable<HistoryItemBase> 
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        HistoryItemBase<?> that = (HistoryItemBase<?>) o;
+        final HistoryItemBase<?> that = (HistoryItemBase<?>) o;
 
         return Objects.equals(label, that.label);
     }

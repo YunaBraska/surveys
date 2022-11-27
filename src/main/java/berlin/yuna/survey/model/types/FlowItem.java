@@ -53,7 +53,7 @@ public abstract class FlowItem<T, C extends FlowItem<T, C>> implements Comparabl
      * Get a flow item by the given {@code enum}
      *
      * @param label The {@code label} to search in flow
-     * @return {@link Optional< FlowItem >} or {@link Optional#empty()} when flow doesn't contain the
+     * @return {@link Optional<FlowItem>} or {@link Optional#empty()} when flow doesn't contain the
      * requested item
      */
     public Optional<FlowItem<?, ?>> get(final Enum<?> label) {
@@ -64,7 +64,7 @@ public abstract class FlowItem<T, C extends FlowItem<T, C>> implements Comparabl
      * Get a flow item by the given {@code String}
      *
      * @param label The {@code label} to search in flow
-     * @return {@link Optional< FlowItem >} or {@link Optional#empty()} when flow doesn't contain the
+     * @return {@link Optional<FlowItem>} or {@link Optional#empty()} when flow doesn't contain the
      * requested item
      */
     public Optional<FlowItem<?, ?>> get(final String label) {
@@ -75,7 +75,7 @@ public abstract class FlowItem<T, C extends FlowItem<T, C>> implements Comparabl
      * Get a flow item by the given {@link FlowItem}
      *
      * @param type {@link FlowItem} to search in flow
-     * @return {@link Optional< FlowItem >} or {@link Optional#empty()} when flow doesn't contain the
+     * @return {@link Optional<FlowItem>} or {@link Optional#empty()} when flow doesn't contain the
      * requested item
      */
     public <I extends FlowItem<?, ?>> Optional<I> get(final I type) {
@@ -114,7 +114,7 @@ public abstract class FlowItem<T, C extends FlowItem<T, C>> implements Comparabl
      * @return {@link FlowItem} or {@code fallback} when flow doesn't contain the
      * requested item
      */
-    public <I extends FlowItem<?, ?>> I getOrElse(final I type, I fallback) {
+    public <I extends FlowItem<?, ?>> I getOrElse(final I type, final I fallback) {
         return type == null ? fallback : get(type).orElse(fallback);
     }
 
@@ -335,7 +335,7 @@ public abstract class FlowItem<T, C extends FlowItem<T, C>> implements Comparabl
      * @return object from json
      */
     public Optional<T> fromJson(final String answerJson) {
-        ObjectMapper mapper = surveyMapper();
+        final ObjectMapper mapper = surveyMapper();
         return answerJson == null || answerJson.trim().length() == 0 ?
                 Optional.empty() : tryDo(() -> mapper.readValue(answerJson, new TypeReference<>() {}));
     }
@@ -432,7 +432,7 @@ public abstract class FlowItem<T, C extends FlowItem<T, C>> implements Comparabl
      */
     @SuppressWarnings("unchecked")
     public <I extends FlowItem<?, ?>> Optional<I> find(final I search) {
-        Optional<FlowItem<?, ?>> result = find(search.label());
+        final Optional<FlowItem<?, ?>> result = find(search.label());
         assertSameType(result.orElse(null), search);
         return result.isEmpty() ? Optional.empty() : Optional.of((I) result.get());
     }
@@ -443,7 +443,6 @@ public abstract class FlowItem<T, C extends FlowItem<T, C>> implements Comparabl
         }
     }
 
-    @SuppressWarnings({"unchecked"})
     protected void addParent(final FlowItem<?, ?> parent) {
         parents.add(parent);
     }
@@ -487,11 +486,11 @@ public abstract class FlowItem<T, C extends FlowItem<T, C>> implements Comparabl
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        FlowItem<?, ?> that = (FlowItem<?, ?>) o;
+        final FlowItem<?, ?> that = (FlowItem<?, ?>) o;
 
         return Objects.equals(label, that.label);
     }
@@ -509,7 +508,7 @@ public abstract class FlowItem<T, C extends FlowItem<T, C>> implements Comparabl
     }
 
     @Override
-    public int compareTo(FlowItem o) {
+    public int compareTo(final FlowItem o) {
         return String.CASE_INSENSITIVE_ORDER.compare(o.label, label);
     }
 

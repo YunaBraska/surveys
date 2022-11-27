@@ -21,8 +21,8 @@ public class HistoryItemJson extends HistoryItemBase<String> {
 
     public static Optional<HistoryItemJson> of(final FlowItem<?, ?> flowStart, final HistoryItemBase<?> item) {
         return flowStart.get(item.getLabel()).stream().findAny().map(flowItem -> {
-            if (item instanceof HistoryItemJson) {
-                return (HistoryItemJson) item;
+            if (item instanceof HistoryItemJson historyItemJson) {
+                return historyItemJson;
             } else {
                 return new HistoryItemJson(item, flowItem.toJson(item.getAnswer()));
             }

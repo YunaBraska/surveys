@@ -4,6 +4,7 @@ import berlin.yuna.survey.model.Condition;
 
 import java.math.BigInteger;
 
+@SuppressWarnings({"unused", "UnusedReturnValue"})
 public class CustomCondition3 extends Condition<BigInteger> {
 
     public CustomCondition3() {

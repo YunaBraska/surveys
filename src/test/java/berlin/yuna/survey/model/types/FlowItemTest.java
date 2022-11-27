@@ -66,7 +66,7 @@ class FlowItemTest {
         final Question subFlow = Question.of(Q2).target(Question.of(Q4)).target(Question.of(Q5), a -> a.equalsIgnoreCase("ok"));
         final Question flow = Question.of(Q1).target(subFlow).target(Question.of(Q3), a -> a.equalsIgnoreCase("fail"));
 
-        Set<FlowItem<?, ?>> targets = flow.targets();
+        final Set<FlowItem<?, ?>> targets = flow.targets();
         assertThat(targets, hasItems(Question.of(Q2), Question.of(Q3)));
         assertThat(targets, not(hasItems(Question.of(Q1), Question.of(Q4), Question.of(Q5))));
     }
@@ -83,7 +83,7 @@ class FlowItemTest {
         flow.target(q3);
         assertThat(q2.parents(), not(hasItems(flow)));
 
-        Set<FlowItem<?, ?>> targets = flow.targets();
+        final Set<FlowItem<?, ?>> targets = flow.targets();
         assertThat(targets, not(hasItems(q2)));
         assertThat(targets, hasItems(q3));
     }
@@ -107,7 +107,7 @@ class FlowItemTest {
     @Test
     @DisplayName("Parse and answer")
     void parseAndAnswer() {
-        QuestionBool q1 = QuestionBool.of(Q1)
+        final QuestionBool q1 = QuestionBool.of(Q1)
                 .target(Question.of(Q2), b -> b)
                 .target(Question.of(Q3), b -> !b);
         assertThat(q1.parseAndAnswer(contextOf("0")), is(equalTo(Optional.of(Question.of(Q3)))));
@@ -118,7 +118,7 @@ class FlowItemTest {
     @Test
     @DisplayName("Return previous on creating duplication")
     void creatingQuestionTwice_returnThePreviouslyCreatedOne() {
-        Question q1 = Question.of(Q1);
+        final Question q1 = Question.of(Q1);
         assertThat(q1, is(equalTo(Question.of(Q1))));
     }
 
@@ -165,7 +165,7 @@ class FlowItemTest {
     @DisplayName("AnswerRoute [COV]")
     void checkAnswerRoute() {
         final CustomCondition customChoice = new CustomCondition();
-        Route<String> route = new Route<>(Question.of(Q1), null, customChoice, false);
+        final Route<String> route = new Route<>(Question.of(Q1), null, customChoice, false);
         assertThat(route.target(), is(Question.of(Q1)));
         assertThat(route.getLabel(), is(customChoice.getLabel()));
         assertThat(route.equals(new Route<>(Question.of(Q1), null, customChoice, false)), is(true));
@@ -192,19 +192,19 @@ class FlowItemTest {
         final Question q2 = Question.of(Q2);
         final Question flow = Question.of(Q1).target(q2.target(Question.of(Q3)));
         //By String
-        String qString = null;
+        final String qString = null;
         assertThat(flow.get(Q1).get().targets(), hasItems(q2));
         assertThat(flow.getOrElse(Q2, Question.of(Q3)), is(q2));
         assertThat(flow.getOrElse(Q5, q2), is(q2));
         assertThat(flow.getOrElse(qString, q2), is(q2));
         //By Enum
-        Enum<?> qEnum = null;
+        final Enum<?> qEnum = null;
         assertThat(flow.get(Q.Q1).get().targets(), hasItems(q2));
         assertThat(flow.getOrElse(Q.Q2, Question.of(Q3)), is(q2));
         assertThat(flow.getOrElse(Q.Q5, q2), is(q2));
         assertThat(flow.getOrElse(qEnum, q2), is(q2));
         //By Type
-        Question qType = null;
+        final Question qType = null;
         assertThat(flow.get(Question.of(Q1)).get().targets(), hasItems(q2));
         assertThat(flow.getOrElse(Question.of(Q2), Question.of(Q3)), is(q2));
         assertThat(flow.getOrElse(Question.of(Q5), q2), is(q2));

@@ -67,7 +67,7 @@ public class Survey {
                 .map(item -> HistoryItem.of(flowStart, item))
                 .flatMap(Optional::stream)
                 .collect(toCollection(LinkedList::new));
-        Survey context = init(flowStart);
+        final Survey context = init(flowStart);
         if (linkedHistory.isEmpty()) {
             return init(flowStart);
         }
@@ -344,7 +344,7 @@ public class Survey {
 
     private HistoryItem getOrCreateAnswer(final String label) {
         final HistoryItem answer = new HistoryItem(label);
-        int index = history.indexOf(answer);
+        final int index = history.indexOf(answer);
         if (index == -1) {
             history.add(answer);
             return answer;
@@ -359,7 +359,7 @@ public class Survey {
         flowStart = startQuestion;
     }
 
-    private void assertExists(FlowItem<?, ?> startQuestion) {
+    private void assertExists(final FlowItem<?, ?> startQuestion) {
         if (startQuestion == null) {
             throw new IllegalArgumentException("Missing " + FlowItem.class.getSimpleName() + ", given was null");
         }
@@ -393,7 +393,7 @@ public class Survey {
     private boolean runBackTransitions(final FlowItem<?, ?> target, final Object context) {
         final Iterator<HistoryItem> iterator = new LinkedList<>(history).descendingIterator();
         while (iterator.hasNext()) {
-            HistoryItem answer = iterator.next();
+            final HistoryItem answer = iterator.next();
             if (answer.isCurrent()) {
                 history.remove(answer);
                 continue;
@@ -439,8 +439,8 @@ public class Survey {
     }
 
     private static <T, K, U> Collector<T, ?, Map<K, U>> toLinkedMap(
-            Function<? super T, ? extends K> keyMapper,
-            Function<? super T, ? extends U> valueMapper) {
+            final Function<? super T, ? extends K> keyMapper,
+            final Function<? super T, ? extends U> valueMapper) {
         return Collectors.toMap(
                 keyMapper,
                 valueMapper,

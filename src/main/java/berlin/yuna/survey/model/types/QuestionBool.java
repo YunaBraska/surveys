@@ -4,15 +4,16 @@ import berlin.yuna.survey.model.ContextExchange;
 
 import java.util.Optional;
 
+@SuppressWarnings({"unused", "UnusedReturnValue"})
 public class QuestionBool extends FlowItem<Boolean, QuestionBool> {
 
     @Override
     public Optional<Boolean> parse(final ContextExchange exchange) {
-        if (exchange.payload() instanceof Boolean) {
-            return Optional.of((Boolean) exchange.payload());
-        } else if (exchange.payload() instanceof Number && ((Number) exchange.payload()).intValue() == 1) {
+        if (exchange.payload() instanceof Boolean bool) {
+            return Optional.of(bool);
+        } else if (exchange.payload() instanceof Number number && number.intValue() == 1) {
             return Optional.of(true);
-        } else if (exchange.payload() instanceof Number && ((Number) exchange.payload()).intValue() == 0) {
+        } else if (exchange.payload() instanceof Number number && number.intValue() == 0) {
             return Optional.of(false);
         }
 
@@ -43,7 +44,7 @@ public class QuestionBool extends FlowItem<Boolean, QuestionBool> {
         return false;
     }
 
-    public QuestionBool(String label) {
+    public QuestionBool(final String label) {
         super(label);
     }
 }

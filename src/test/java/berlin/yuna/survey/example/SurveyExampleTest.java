@@ -23,8 +23,8 @@ class SurveyExampleTest {
         final AtomicBoolean question2BackTriggered = new AtomicBoolean(false);
 
         //DEFINE FLOW
-        flow.target(Question.of("Q1_TRUE"), answer -> answer == true);
-        flow.targetGet(Question.of("Q1_FALSE"), answer -> answer == false)
+        flow.target(Question.of("Q1_TRUE"), answer -> answer);
+        flow.targetGet(Question.of("Q1_FALSE"), answer -> !answer)
                 .targetGet(Question.of("Q2")).onBack(oldAnswer -> {
                     question2BackTriggered.set(true);
                     return true;
@@ -46,7 +46,7 @@ class SurveyExampleTest {
         assertThat(survey01.answer("No").get(), is(equalTo(Question.of("Q1_FALSE"))));
 
         //EXPORT / IMPORT
-        List<HistoryItemJson> export = survey01.getHistoryJson();
+        final List<HistoryItemJson> export = survey01.getHistoryJson();
         final Survey survey02 = Survey.init(flow, export);
         assertThat(export, is(equalTo(survey02.getHistoryJson())));
         assertThat(survey02.get(), is(equalTo(survey01.get())));

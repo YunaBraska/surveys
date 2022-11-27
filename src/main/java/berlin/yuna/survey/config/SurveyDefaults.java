@@ -18,4 +18,7 @@ public class SurveyDefaults {
         mapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
         return mapper;
     }
+
+    private SurveyDefaults() {
+    }
 }

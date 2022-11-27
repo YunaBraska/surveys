@@ -4,6 +4,7 @@ import berlin.yuna.survey.model.ContextExchange;
 
 import java.util.Optional;
 
+@SuppressWarnings({"unused", "UnusedReturnValue"})
 public class Question extends FlowItem<String, Question> {
 
     @Override
@@ -19,7 +20,7 @@ public class Question extends FlowItem<String, Question> {
         return new Question(label);
     }
 
-    public Question(String label) {
+    public Question(final String label) {
         super(label);
     }
 }

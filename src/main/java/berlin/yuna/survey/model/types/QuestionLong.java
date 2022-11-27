@@ -9,8 +9,8 @@ public class QuestionLong extends FlowItem<Long, QuestionLong> {
 
     @Override
     public Optional<Long> parse(final ContextExchange exchange) {
-        if (exchange.payload() instanceof Number) {
-            return Optional.of(((Number) exchange.payload()).longValue());
+        if (exchange.payload() instanceof Number number) {
+            return Optional.of(number.longValue());
         }
         try {
             return Optional.of(Long.valueOf(String.valueOf(exchange.payload())));
@@ -27,7 +27,7 @@ public class QuestionLong extends FlowItem<Long, QuestionLong> {
         return new QuestionLong(label);
     }
 
-    private QuestionLong(String label) {
+    private QuestionLong(final String label) {
         super(label);
     }
 }

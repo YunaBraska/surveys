@@ -27,7 +27,7 @@ public class QuestionInvalid extends FlowItem<Integer, QuestionInvalid> {
         return new QuestionInvalid(label);
     }
 
-    private QuestionInvalid(String label) {
+    private QuestionInvalid(final String label) {
         super(label);
     }
 }

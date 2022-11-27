@@ -41,8 +41,8 @@ public class DiagramImporter {
     public DiagramImporter() {
         stream(Package.getPackages()).forEach(p -> {
             try {
-                var flowItems = new Reflections(p.getName()).getSubTypesOf(FlowItem.class);
-                var conditionItems = new Reflections(p.getName()).getSubTypesOf(Condition.class);
+                final var flowItems = new Reflections(p.getName()).getSubTypesOf(FlowItem.class);
+                final var conditionItems = new Reflections(p.getName()).getSubTypesOf(Condition.class);
                 flowItems.forEach(aClass -> flowRegister.add((Class<? extends FlowItem<?, ?>>) aClass));
                 conditionItems.forEach(aClass -> choiceRegister.add((Class<? extends Condition<?>>) aClass));
             } catch (final Exception ignored) {
@@ -148,7 +148,7 @@ public class DiagramImporter {
     }
 
     //TODO more matching cases like by label, replace spaces,...
-    private boolean nameEqualsClass(final String name, Class<? extends Condition<?>> c) {
+    private boolean nameEqualsClass(final String name, final Class<? extends Condition<?>> c) {
         final String importName = name.trim().replace(" ", "");
         return c.getSimpleName().equalsIgnoreCase(importName)
                 || c.getCanonicalName().equalsIgnoreCase(importName);
@@ -163,7 +163,7 @@ public class DiagramImporter {
         final String type = (String) node.get(CONFIG_KEY_CLASS);
         final String label = (String) node.get(CONFIG_KEY_SOURCE);
         try {
-            FlowItem<?, ?> flowItem = flowRegister.stream().filter(clazz -> clazz.getSimpleName().equals(type)).findFirst()
+            final FlowItem<?, ?> flowItem = flowRegister.stream().filter(clazz -> clazz.getSimpleName().equals(type)).findFirst()
                     .orElseThrow(() -> new FlowImportException(null, label, "No class registered for type [" + type + "]"))
                     .getConstructor(String.class).newInstance(label);
             getConditionsByName(node.get(CONFIG_KEY_CONDITION)).forEach(flowItem::onBack);

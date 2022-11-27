@@ -19,7 +19,7 @@ public class Route<T> implements Comparable<Route<?>>{
         this.backwards = backwards;
     }
 
-    public boolean apply(T answer) {
+    public boolean apply(final T answer) {
         return (hasCondition() && condition.apply(answer)) || (hasFunction() && function.apply(answer));
     }
 
@@ -64,11 +64,11 @@ public class Route<T> implements Comparable<Route<?>>{
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        Route<?> route = (Route<?>) o;
+        final Route<?> route = (Route<?>) o;
 
         if (backwards != route.backwards) return false;
         if (!Objects.equals(function, route.function)) return false;

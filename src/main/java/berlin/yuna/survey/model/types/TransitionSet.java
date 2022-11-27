@@ -19,7 +19,7 @@ public class TransitionSet<T> extends HashSet<Route<T>> {
 
     private final FlowItem<T, ?> flowItem;
 
-    public TransitionSet(FlowItem<T, ?> flowItem) {
+    public TransitionSet(final FlowItem<T, ?> flowItem) {
         this.flowItem = flowItem;
     }
 
@@ -73,7 +73,7 @@ public class TransitionSet<T> extends HashSet<Route<T>> {
         addAll((Collection<? extends Route<T>>) transitionSet);
     }
 
-    private void removeItemsWithoutCondition(final Condition<T> condition, final Function<T, ?> function, boolean isBack) {
+    private void removeItemsWithoutCondition(final Condition<T> condition, final Function<T, ?> function, final boolean isBack) {
         if (condition == null && function == null) {
             final Set<Route<T>> connections = stream().filter(route -> isBack? route.isBackwardFlow() : route.isForwardFlow()).filter(Route::hasNoCondition).collect(toSet());
             connections.forEach(route -> route.target().parents().remove(flowItem));
@@ -82,12 +82,12 @@ public class TransitionSet<T> extends HashSet<Route<T>> {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
 
-        TransitionSet<?> that = (TransitionSet<?>) o;
+        final TransitionSet<?> that = (TransitionSet<?>) o;
 
         return Objects.equals(flowItem, that.flowItem);
     }
