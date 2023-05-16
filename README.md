@@ -3,6 +3,8 @@
 Surveys is a plain java library to provide a base for nested questionnaires. It also provides a function
 to [generate and import diagrams](#diagram-example) using [graphviz-java](https://github.com/nidi3/graphviz-java) and to [measure answer times](#answer-duration-metrics).
 
+[![](https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86)](https://github.com/sponsors/YunaBraska)
+
 [![Build][build_shield]][build_link]
 [![Maintainable][maintainable_shield]][maintainable_link]
 [![Coverage][coverage_shield]][coverage_link]
