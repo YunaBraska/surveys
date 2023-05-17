@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>berlin.yuna</groupId>
     <artifactId>surveys</artifactId>
-    <version>0.1.67</version>
+    <version>0.1.68</version>
     <name>Surveys</name>
 
     <description>Survey is a plain java library to provide a base for surveys / questionnaires. It also provides a
@@ -43,7 +43,7 @@
         <!-- VERSIONS -->
         <hamcrest-core.version>2.2</hamcrest-core.version>
         <graphviz-java.version>0.18.1</graphviz-java.version>
-        <jackson-databind.version>2.15.0</jackson-databind.version>
+        <jackson-databind.version>2.15.1</jackson-databind.version>
         <junit-jupiter-api.version>5.10.0-M1</junit-jupiter-api.version>
         <!-- VERSIONS BUILD -->
         <maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
