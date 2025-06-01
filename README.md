@@ -330,8 +330,8 @@ class SurveyExampleTest {
 * [ ] Diagram: Custom styling also for links
 * [ ] Diagram: Import / Export from UML
 
-[build_shield]: https://github.com/YunaBraska/surveys/workflows/JAVA_CI/badge.svg
-[build_link]: https://github.com/YunaBraska/surveys/actions?query=workflow%3AJAVA_CI
+[build_shield]: https://github.com/YunaBraska/surveys/workflows/Daily/badge.svg
+[build_link]: https://github.com/YunaBraska/surveys/actions?query=workflow%3ADaily
 [maintainable_shield]: https://img.shields.io/codeclimate/maintainability/YunaBraska/surveys?style=flat-square
 [maintainable_link]: https://codeclimate.com/github/YunaBraska/surveys/maintainability
 [coverage_shield]: https://img.shields.io/codeclimate/coverage/YunaBraska/surveys?style=flat-square
