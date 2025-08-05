@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>berlin.yuna</groupId>
     <artifactId>surveys</artifactId>
-    <version>2025.07.2030626</version>
+    <version>2025.08.2170628</version>
     <name>Surveys</name>
 
     <description>Survey is a plain java library to provide a base for surveys / questionnaires. It also provides a
@@ -41,7 +41,7 @@
 
         <!-- PROD -->
         <graphviz-java-version>0.18.1</graphviz-java-version>
-        <jackson-databind.version>2.19.2</jackson-databind.version>
+        <jackson-databind.version>2.20.0-rc1</jackson-databind.version>
 
         <!-- TEST -->
         <junit.version>5.13.4</junit.version>
