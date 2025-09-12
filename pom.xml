@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>berlin.yuna</groupId>
     <artifactId>surveys</artifactId>
-    <version>2025.08.2430621</version>
+    <version>2025.09.2550623</version>
     <name>Surveys</name>
 
     <description>Survey is a plain java library to provide a base for surveys / questionnaires. It also provides a
