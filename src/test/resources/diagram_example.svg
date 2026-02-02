@@ -1,7 +1,7 @@
-<svg width="1000px" height="192px"
- viewBox="0.00 0.00 858.51 165.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg width="1000px" height="211px"
+ viewBox="0.00 0.00 781.54 165.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g id="graph0" class="graph" transform="scale(1.0 1.0) rotate(0.0) translate(4.0 161.0)">
-<polygon fill="white" stroke="transparent" points="-4,4 -4,-161 854.51,-161 854.51,4 -4,4"/>
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-161 777.54,-161 777.54,4 -4,4"/>
 <!-- START -->
 <g id="node1" class="node">
 <title>START</title>
@@ -23,88 +23,88 @@
 <!-- Q1_CHOICE -->
 <g id="node3" class="node">
 <title>Q1_CHOICE</title>
-<ellipse fill="none" stroke="blue" cx="257.33" cy="-86" rx="69.87" ry="18"/>
-<text text-anchor="middle" x="257.33" y="-81.8" font-family="Helvetica,sans-Serif" font-size="14.00">Q1_CHOICE</text>
+<polygon fill="none" stroke="blue" points="288.97,-104 187.2,-104 187.2,-68 288.97,-68 288.97,-104"/>
+<text text-anchor="middle" x="238.09" y="-81.8" font-family="Helvetica,sans-Serif" font-size="14.00">Q1_CHOICE</text>
 </g>
 <!-- Q1&#45;&gt;Q1_CHOICE -->
 <g id="edge2" class="edge">
 <title>Q1&#45;&gt;Q1_CHOICE</title>
-<path fill="none" stroke="blue" d="M150.46,-53.1C165.22,-57.69 184.26,-63.6 202.11,-69.15"/>
-<polygon fill="blue" stroke="blue" points="201.28,-72.56 211.87,-72.18 203.35,-65.87 201.28,-72.56"/>
+<path fill="none" stroke="blue" d="M150.53,-54.51C158.72,-57.49 168.12,-60.91 177.65,-64.37"/>
+<polygon fill="blue" stroke="blue" points="176.57,-67.71 187.16,-67.84 178.96,-61.13 176.57,-67.71"/>
 </g>
 <!-- Q2 -->
 <g id="node4" class="node">
 <title>Q2</title>
-<polygon fill="none" stroke="black" points="454.95,-157 400.95,-157 400.95,-121 454.95,-121 454.95,-157"/>
-<text text-anchor="middle" x="427.95" y="-134.8" font-family="Helvetica,sans-Serif" font-size="14.00">Q2</text>
+<polygon fill="none" stroke="black" points="416.47,-157 362.47,-157 362.47,-121 416.47,-121 416.47,-157"/>
+<text text-anchor="middle" x="389.47" y="-134.8" font-family="Helvetica,sans-Serif" font-size="14.00">Q2</text>
 </g>
 <!-- Q1_CHOICE&#45;&gt;Q2 -->
 <g id="edge3" class="edge">
 <title>Q1_CHOICE&#45;&gt;Q2</title>
-<path fill="none" stroke="black" d="M302.63,-99.93C330.2,-108.59 365.19,-119.59 391.02,-127.71"/>
-<polygon fill="black" stroke="black" points="390.2,-131.12 400.79,-130.78 392.3,-124.44 390.2,-131.12"/>
+<path fill="none" stroke="black" d="M288.83,-103.65C309.79,-111.08 333.71,-119.57 352.86,-126.37"/>
+<polygon fill="black" stroke="black" points="351.8,-129.7 362.4,-129.75 354.14,-123.11 351.8,-129.7"/>
 </g>
 <!-- Q3 -->
 <g id="node5" class="node">
 <title>Q3</title>
-<polygon fill="none" stroke="blue" points="582.64,-104 528.64,-104 528.64,-68 582.64,-68 582.64,-104"/>
-<text text-anchor="middle" x="555.64" y="-81.8" font-family="Helvetica,sans-Serif" font-size="14.00">Q3</text>
+<polygon fill="none" stroke="blue" points="544.16,-104 490.16,-104 490.16,-68 544.16,-68 544.16,-104"/>
+<text text-anchor="middle" x="517.16" y="-81.8" font-family="Helvetica,sans-Serif" font-size="14.00">Q3</text>
 </g>
 <!-- Q1_CHOICE&#45;&gt;Q3 -->
 <g id="edge4" class="edge">
 <title>Q1_CHOICE&#45;&gt;Q3</title>
-<path fill="none" stroke="blue" d="M327.43,-86C387.05,-86 470.82,-86 518.21,-86"/>
-<polygon fill="blue" stroke="blue" points="518.32,-89.5 528.32,-86 518.32,-82.5 518.32,-89.5"/>
-<text text-anchor="middle" x="427.95" y="-90.2" font-family="Helvetica,sans-Serif" font-size="14.00">If equals 1</text>
+<path fill="none" stroke="blue" d="M288.94,-86C343.95,-86 431.15,-86 479.98,-86"/>
+<polygon fill="blue" stroke="blue" points="480.08,-89.5 490.08,-86 480.08,-82.5 480.08,-89.5"/>
+<text text-anchor="middle" x="389.47" y="-90.2" font-family="Helvetica,sans-Serif" font-size="14.00">If equals 1</text>
 </g>
 <!-- Q2&#45;&gt;Q3 -->
 <g id="edge5" class="edge">
 <title>Q2&#45;&gt;Q3</title>
-<path fill="none" stroke="black" d="M454.99,-128.02C473.62,-120.17 498.89,-109.51 519.33,-100.89"/>
-<polygon fill="black" stroke="black" points="520.78,-104.08 528.63,-96.97 518.06,-97.63 520.78,-104.08"/>
+<path fill="none" stroke="black" d="M416.51,-128.02C435.13,-120.17 460.41,-109.51 480.85,-100.89"/>
+<polygon fill="black" stroke="black" points="482.29,-104.08 490.15,-96.97 479.57,-97.63 482.29,-104.08"/>
 </g>
 <!-- Q3_CHOICE -->
 <g id="node6" class="node">
 <title>Q3_CHOICE</title>
-<ellipse fill="none" stroke="black" cx="689.57" cy="-45" rx="69.87" ry="18"/>
-<text text-anchor="middle" x="689.57" y="-40.8" font-family="Helvetica,sans-Serif" font-size="14.00">Q3_CHOICE</text>
+<polygon fill="none" stroke="black" points="682.74,-63 580.96,-63 580.96,-27 682.74,-27 682.74,-63"/>
+<text text-anchor="middle" x="631.85" y="-40.8" font-family="Helvetica,sans-Serif" font-size="14.00">Q3_CHOICE</text>
 </g>
 <!-- Q3&#45;&gt;Q3_CHOICE -->
 <g id="edge6" class="edge">
 <title>Q3&#45;&gt;Q3_CHOICE</title>
-<path fill="none" stroke="black" d="M582.71,-77.9C597.47,-73.31 616.5,-67.4 634.35,-61.85"/>
-<polygon fill="black" stroke="black" points="635.6,-65.13 644.11,-58.82 633.52,-58.44 635.6,-65.13"/>
+<path fill="none" stroke="black" d="M544.29,-76.49C552.49,-73.51 561.89,-70.09 571.41,-66.63"/>
+<polygon fill="black" stroke="black" points="572.73,-69.87 580.93,-63.16 570.34,-63.29 572.73,-69.87"/>
 </g>
 <!-- Q3_CHOICE&#45;&gt;Q1 -->
 <g id="edge8" class="edge">
 <title>Q3_CHOICE&#45;&gt;Q1</title>
-<path fill="none" stroke="black" d="M626.6,-37.03C604.55,-34.81 579.52,-33 556.64,-33 256.33,-33 256.33,-33 256.33,-33 223.84,-33 187.04,-36.65 160.57,-39.93"/>
-<polygon fill="black" stroke="black" points="160.09,-36.46 150.61,-41.2 160.98,-43.4 160.09,-36.46"/>
-<text text-anchor="middle" x="427.95" y="-37.2" font-family="Helvetica,sans-Serif" font-size="14.00">CustomCondition2</text>
+<path fill="none" stroke="black" d="M581.04,-37.4C561.49,-35.02 538.82,-33 518.16,-33 237.09,-33 237.09,-33 237.09,-33 211.44,-33 182.69,-36.11 160.65,-39.17"/>
+<polygon fill="black" stroke="black" points="160.12,-35.71 150.72,-40.6 161.12,-42.63 160.12,-35.71"/>
+<text text-anchor="middle" x="389.47" y="-37.2" font-family="Helvetica,sans-Serif" font-size="14.00">CustomCondition2</text>
 </g>
 <!-- END -->
 <g id="node7" class="node">
 <title>END</title>
-<polygon fill="none" stroke="black" points="850.51,-90 796.51,-90 796.51,-54 850.51,-54 850.51,-90"/>
-<text text-anchor="middle" x="823.51" y="-67.8" font-family="Helvetica,sans-Serif" font-size="14.00">END</text>
+<polygon fill="none" stroke="black" points="773.54,-90 719.54,-90 719.54,-54 773.54,-54 773.54,-90"/>
+<text text-anchor="middle" x="746.54" y="-67.8" font-family="Helvetica,sans-Serif" font-size="14.00">END</text>
 </g>
 <!-- Q3_CHOICE&#45;&gt;END -->
 <g id="edge7" class="edge">
 <title>Q3_CHOICE&#45;&gt;END</title>
-<path fill="none" stroke="black" d="M745,-56.14C759,-59 773.72,-62.02 786.52,-64.64"/>
-<polygon fill="black" stroke="black" points="785.83,-68.07 796.33,-66.64 787.24,-61.21 785.83,-68.07"/>
+<path fill="none" stroke="black" d="M682.61,-56.92C691.76,-59.11 701.15,-61.36 709.79,-63.43"/>
+<polygon fill="black" stroke="black" points="708.99,-66.84 719.53,-65.77 710.62,-60.03 708.99,-66.84"/>
 </g>
 <!-- Q5 -->
 <g id="node8" class="node">
 <title>Q5</title>
-<polygon fill="none" stroke="black" points="850.51,-36 796.51,-36 796.51,0 850.51,0 850.51,-36"/>
-<text text-anchor="middle" x="823.51" y="-13.8" font-family="Helvetica,sans-Serif" font-size="14.00">Q5</text>
+<polygon fill="none" stroke="black" points="773.54,-36 719.54,-36 719.54,0 773.54,0 773.54,-36"/>
+<text text-anchor="middle" x="746.54" y="-13.8" font-family="Helvetica,sans-Serif" font-size="14.00">Q5</text>
 </g>
 <!-- Q3_CHOICE&#45;&gt;Q5 -->
 <g id="edge9" class="edge">
 <title>Q3_CHOICE&#45;&gt;Q5</title>
-<path fill="none" stroke="black" d="M745,-33.86C759,-31 773.72,-27.98 786.52,-25.36"/>
-<polygon fill="black" stroke="black" points="787.24,-28.79 796.33,-23.36 785.83,-21.93 787.24,-28.79"/>
+<path fill="none" stroke="black" d="M682.61,-33.08C691.76,-30.89 701.15,-28.64 709.79,-26.57"/>
+<polygon fill="black" stroke="black" points="710.62,-29.97 719.53,-24.23 708.99,-23.16 710.62,-29.97"/>
 </g>
 </g>
 </svg>
