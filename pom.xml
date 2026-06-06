@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>berlin.yuna</groupId>
     <artifactId>surveys</artifactId>
-    <version>2026.06.1550951</version>
+    <version>2026.06.1570829</version>
     <name>Surveys</name>
 
     <description>Survey is a plain java library to provide a base for surveys / questionnaires. It also provides a
@@ -51,7 +51,7 @@
         <!-- BUILD -->
         <maven-gpg-plugin.version>3.2.7</maven-gpg-plugin.version>
         <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
-        <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
+        <jacoco-maven-plugin.version>0.8.15</jacoco-maven-plugin.version>
         <maven-javadoc-plugin.version>3.1.0</maven-javadoc-plugin.version>
         <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.5.6</maven-surefire-plugin.version>
