@@ -43,7 +43,7 @@
 
         <!-- PROD -->
         <graphviz-java-version>0.18.1</graphviz-java-version>
-        <jackson-databind.version>2.22.1</jackson-databind.version>
+        <jackson-databind.version>2.22.2</jackson-databind.version>
 
         <!-- TEST -->
         <junit.version>6.1.3</junit.version>
