@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.nio.file.Path;
 
 import static berlin.yuna.survey.logic.SurveyTest.createSimpleSurvey;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -36,8 +35,6 @@ class DiagramExporterIntegrationTest {
         for (Format format : Format.values()) {
             System.out.println(survey.diagram().save(format).toPath().toUri());
         }
-        final Path exampleOutput = Path.of(System.getProperty("user.dir"), "src/test/resources/diagram_example.svg");
-        survey.diagram().save(exampleOutput.toFile(), Format.SVG);
     }
 
     @Test
